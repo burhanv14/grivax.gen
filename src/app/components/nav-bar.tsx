@@ -1,3 +1,4 @@
+import { ThemeToggle } from "../utils/themetoggle"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import {
@@ -56,9 +57,9 @@ export default function NavBar() {
               className="w-64 pl-9 bg-gray-900 border-gray-800 text-gray-300 placeholder:text-gray-500"
             />
           </div>
-          <Button variant="ghost" size="icon" className="text-gray-300">
-            <Moon className="h-5 w-5" />
-          </Button>
+          <div>
+            <ThemeToggle/>  
+          </div>
           <Button className="bg-red-600 hover:bg-red-700 text-white">Sign In</Button>
         </div>
       </div>
