@@ -2,6 +2,7 @@
 'use client'
 import React, { useEffect, useState } from 'react';
 import WebsiteLoader from '../components/websiteLoader';
+import HomePageHeader from '../components/homepageHeader';
 
 export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
@@ -47,12 +48,8 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-black">
-      <div className="container mx-auto px-4 py-16">
-        <h1 className="text-4xl font-bold text-white mb-8">Welcome to Our Site</h1>
-        {/* Add your content sections here */}
-        <section className="space-y-8">
-          {/* Add your sections here */}
-        </section>
+      <div className="container mx-auto">
+        <HomePageHeader/>
       </div>
     </main>
   );
