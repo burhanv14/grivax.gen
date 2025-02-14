@@ -2,7 +2,9 @@
 'use client'
 import React, { useEffect, useState } from 'react';
 import WebsiteLoader from '../components/websiteLoader';
-import HomePageHeader from '../components/homepageHeader';
+import NavBar from "../components/nav-bar"
+import HeroSection from "../components/hero-section"
+
 
 export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
@@ -49,7 +51,8 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-black">
       <div className="container mx-auto">
-        <HomePageHeader/>
+      <NavBar />
+      <HeroSection />
       </div>
     </main>
   );
