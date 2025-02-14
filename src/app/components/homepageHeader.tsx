@@ -3,7 +3,7 @@ export default function HomePageHeader(){
     <div>
       <header className="bg-dark-bg py-6">
         <div className="max-w-7xl mx-auto flex justify-between items-center px-6 text-white">
-          <div className="text-lg font-bold">Grivax</div>
+          <div className="text-lg font-bold">Samyak</div>
           <nav>
             <ul className="flex space-x-8">
               <li><a href="#learn">Learn</a></li>
