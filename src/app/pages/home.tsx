@@ -38,7 +38,7 @@ export default function Home() {
     if (contentReady) {
       const timer = setTimeout(() => {
         setIsLoading(false);
-      }, 11000); // Delay to ensure videos complete their transition
+      }, 500); // Delay to ensure videos complete their transition --- Change to 11000
 
       return () => clearTimeout(timer);
     }
