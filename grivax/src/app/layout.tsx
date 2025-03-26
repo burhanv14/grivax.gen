@@ -1,6 +1,7 @@
 import type React from "react"
 import { Inter, Poppins } from "next/font/google"
 import { ThemeProvider } from "../components/theme-provider"
+import { ThemeScript } from "../components/theme-script"
 import Header from "../components/header"
 import Footer from "../components/footer"
 import "../styles/globals.css"
@@ -29,7 +30,8 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} ${poppins.variable} font-sans antialiased`}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange={false}>
+        <ThemeProvider>
+          <ThemeScript />
           <div className="flex min-h-screen flex-col">
             <Header />
             <main className="flex-1">{children}</main>

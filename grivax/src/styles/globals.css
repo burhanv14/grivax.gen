@@ -4,26 +4,28 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    /* Soothing light mode colors */
+    --background: 40 30% 98%; /* Cream background */
     --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
+    --card: 40 30% 99%;
     --card-foreground: 240 10% 3.9%;
-    --popover: 0 0% 100%;
+    --popover: 40 30% 99%;
     --popover-foreground: 240 10% 3.9%;
     --primary: 252 59% 48%;
     --primary-foreground: 0 0% 98%;
-    --secondary: 240 4.8% 95.9%;
+    --secondary: 40 20% 92%; /* Softer secondary */
     --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
+    --muted: 40 20% 95%; /* Softer muted */
     --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
+    --accent: 40 20% 92%; /* Softer accent */
     --accent-foreground: 240 5.9% 10%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
+    --border: 40 20% 88%; /* Softer border */
+    --input: 40 20% 88%; /* Softer input */
     --ring: 252 59% 48%;
     --radius: 0.5rem;
+    --primary-rgb: 124, 58, 237;
   }
 
   .dark {
@@ -46,6 +48,7 @@
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
     --ring: 252 59% 54%;
+    --primary-rgb: 139, 92, 246;
   }
 }
 
@@ -67,6 +70,11 @@
 * {
   transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 150ms;
+  transition-duration: 300ms;
+}
+
+/* Force dark mode styles */
+.dark {
+  color-scheme: dark;
 }
 

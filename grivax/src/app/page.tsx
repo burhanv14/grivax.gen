@@ -4,12 +4,13 @@ import { Button } from "../components/ui/button"
 import FeaturedCourses from "../components/featured-courses"
 import TestimonialSlider from "../components/testimonial-slider"
 import PlaceholderImage from "../components/placeholder-image"
+import ScrollToTop from "../components/scroll-to-top"
 
 export default function Home() {
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-background to-muted/50 pt-16 md:pt-24 lg:pt-32">
+      <section className="relative overflow-hidden bg-gradient-to-b from-background to-muted/50 pt-16 md:pt-24 lg:pt-32 md:pb-14">
         <div className="container relative z-10 mx-auto px-4 md:px-6">
           <div className="grid gap-6 lg:grid-cols-[1fr_400px] lg:gap-12 xl:grid-cols-[1fr_600px]">
             <div className="flex flex-col justify-center space-y-4">
@@ -65,7 +66,7 @@ export default function Home() {
       </section>
 
       {/* Features Section */}
-      <section className="py-16 md:py-24">
+      <section className="py-16 md:py-24 ">
         <div className="container mx-auto px-4 md:px-6">
           <div className="mb-12 text-center">
             <h2 className="font-poppins text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
@@ -164,6 +165,9 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Scroll to Top Button */}
+      <ScrollToTop />
     </div>
   )
 }

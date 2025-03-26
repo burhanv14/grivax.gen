@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Menu, X } from "lucide-react"
+import { Menu, X, LogIn } from "lucide-react"
 import { Button } from "./ui/button"
 import { ThemeToggle } from "./theme-toggle"
 import { cn } from "../lib/utils"
@@ -71,6 +71,20 @@ export default function Header() {
 
         <div className="flex items-center gap-4">
           <ThemeToggle />
+
+          {/* Login/Signup Buttons */}
+          <div className="hidden md:flex md:items-center md:gap-2">
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/login">
+                <LogIn className="mr-2 h-4 w-4" />
+                Log in
+              </Link>
+            </Button>
+            <Button size="sm" asChild>
+              <Link href="/signup">Sign up</Link>
+            </Button>
+          </div>
+
           <div className="hidden md:block">
             <Button asChild>
               <Link href="/dashboard">Get Started</Link>
@@ -104,6 +118,17 @@ export default function Header() {
                 {item.name}
               </Link>
             ))}
+
+            {/* Mobile Login/Signup Buttons */}
+            <div className="flex gap-2 pt-2">
+              <Button variant="outline" size="sm" className="flex-1" asChild>
+                <Link href="/login">Log in</Link>
+              </Button>
+              <Button size="sm" className="flex-1" asChild>
+                <Link href="/signup">Sign up</Link>
+              </Button>
+            </div>
+
             <Button asChild className="mt-2 w-full">
               <Link href="/dashboard">Get Started</Link>
             </Button>
