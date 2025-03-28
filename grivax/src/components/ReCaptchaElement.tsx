@@ -7,9 +7,10 @@ import { CheckCircle, Loader2 } from "lucide-react";
 
 interface FormWithReCaptchaProps {
   className?: string;
+  setIsRecaptchaDone: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-const ReCaptchaElement: React.FC<FormWithReCaptchaProps> = ({ className }) => {
+const ReCaptchaElement: React.FC<FormWithReCaptchaProps> = ({ className , setIsRecaptchaDone }) => {
   const { executeRecaptcha } = useGoogleReCaptcha();
   const [isVerifying, setIsVerifying] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
@@ -37,6 +38,7 @@ const ReCaptchaElement: React.FC<FormWithReCaptchaProps> = ({ className }) => {
 
       if (data.success) {
         setIsVerified(true);
+        setIsRecaptchaDone(true);
       } else {
         console.error("reCAPTCHA verification failed:", data);
       }

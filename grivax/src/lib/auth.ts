@@ -44,8 +44,8 @@ export const authConfig: NextAuthOptions = {
         }
 
         // Exclude sensitive fields before returning the user object
-        const { password, createdAt, id, ...dbUserWithoutPassword } = dbUser;
-        return dbUserWithoutPassword as User;
+        const { password, createdAt, user_id, ...dbUserWithoutPassword } = dbUser;
+        return dbUserWithoutPassword as unknown as User;
       },
     }),
     GoogleProvider({

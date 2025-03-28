@@ -18,7 +18,7 @@ import { signIn } from "next-auth/react";
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isRecaptchaDone, setIsRecaptchaDone] = useState(false);
+  const [isRecaptchaDone, setIsRecaptchaDone] =useState<boolean>(false);
   const router = useRouter();
 
   const handleClickGoog = () => {
@@ -31,7 +31,7 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     if(!isRecaptchaDone){
-      console.warn("Please complete the Recaptcha Verification");
+      alert("Please complete the Recaptcha Verification");
     }
     else{
     e.preventDefault();
@@ -141,7 +141,7 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <ReCaptchaElement/>
+              <ReCaptchaElement setIsRecaptchaDone={setIsRecaptchaDone} />
 
               {error && <p className="text-red-500 text-sm">{error}</p>}
 
@@ -224,9 +224,9 @@ export default function LoginPage() {
             </p>
           </div>
 
-          <div className="mt-4 text-center text-xs text-muted-foreground sm:mt-8">
+          {/* <div className="mt-4 text-center text-xs text-muted-foreground sm:mt-8">
             &copy; {new Date().getFullYear()} Grivax.gen. All rights reserved.
-          </div>
+          </div> */}
         </div>
 
         {/* Right side - Decorative */}
