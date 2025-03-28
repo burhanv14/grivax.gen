@@ -18,7 +18,7 @@ import { signIn } from "next-auth/react";
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isRecaptchaDone, setIsRecaptchaDone] = useState(true);
+  const [isRecaptchaDone, setIsRecaptchaDone] = useState(false);
   const router = useRouter();
 
   const handleClickGoog = () => {
