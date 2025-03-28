@@ -1,5 +1,6 @@
 'use client';
 
+import 'dotenv/config';
 import { useState } from "react";
 import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
 import { CheckCircle, Loader2 } from "lucide-react";
