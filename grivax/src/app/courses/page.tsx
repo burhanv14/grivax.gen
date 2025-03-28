@@ -3,13 +3,15 @@ import CourseGrid from "@/components/course-grid"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { loginIsRequiredServer } from "@/lib/auth"
 
 export const metadata = {
   title: "Courses | Grivax.gen",
   description: "Browse our collection of dynamic, AI-generated courses",
 }
 
-export default function CoursesPage() {
+export default async function CoursesPage() {
+    await loginIsRequiredServer();
   return (
     <div className="container mx-auto px-4 py-12 md:px-6 md:py-16">
       <div className="mb-8 space-y-2">

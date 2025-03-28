@@ -33,13 +33,12 @@ export default function RootLayout({
       <body className={`${inter.variable} ${poppins.variable} font-sans antialiased`}>
         <ThemeProvider>
           <ThemeScript />
-          <ReCaptchaProvider>
+          
           <div className="flex min-h-screen flex-col">
             <Header />
             <main className="flex-1">{children}</main>
             <Footer />
           </div>
-          </ReCaptchaProvider>
         </ThemeProvider>
       </body>
     </html>

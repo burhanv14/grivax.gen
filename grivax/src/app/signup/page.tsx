@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import PlaceholderImage from "@/components/placeholder-image"
 import ReCaptchaElement from "@/components/ReCaptchaElement"
+import ReCaptchaProvider from "@/components/ReCaptchaProvider"
 
 export default function SignupPage() {
   const [isLoading, setIsLoading] = useState(false)
@@ -26,6 +27,7 @@ export default function SignupPage() {
   }
 
   return (
+    <ReCaptchaProvider>
     <div className="flex min-h-screen flex-col lg:flex-row">
       {/* Left side - Signup Form */}
       <div className="flex w-full flex-col justify-between p-4 sm:p-6 md:p-8 lg:w-1/2 lg:p-12">
@@ -214,6 +216,7 @@ export default function SignupPage() {
         </div>
       </div>
     </div>
+    </ReCaptchaProvider>
   )
 }
 
