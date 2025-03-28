@@ -3,7 +3,7 @@ NEXT_PUBLIC_RECAPTCHA_SITE_KEY =
 
 RECAPTCHA_SECRET_KEY = 
 
-DATABASE_URL = postgresql://neondb_owner:npg_Y9tPGTuLfCO2@ep-fragrant-bush-a11n8jp0-pooler.ap-southeast-1.aws.neon.tech/Users?sslmode=require
+DATABASE_URL="prisma+postgres://accelerate.prisma-data.net/?api_key=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcGlfa2V5IjoiMDA0YTg4MjAtODM3Mi00NjI4LTk5ZjEtOWVlZWY0OTU5NzA2IiwidGVuYW50X2lkIjoiZGI3YjZhZmEzN2VhOGVmNmUxYTUxMTU2MTcyNmFkZmM0YmJjM2NkNjk3ZmViNmRhYmU0MzBkMjgxZjczOTRkMCIsImludGVybmFsX3NlY3JldCI6ImMzZDJiMTUwLTQ0NTAtNGEyOS1hYWJkLTUzYjg3MWQ0MTMwMCJ9.LpoW1txUIFnycFtKXuwFhPOOLoZW0TEGPoXaZ81nssY"
 
 #Providers
 GOOGLE_CLIENT_ID=

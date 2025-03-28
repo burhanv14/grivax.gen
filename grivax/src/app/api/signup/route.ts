@@ -1,10 +1,11 @@
 // app/api/signup/route.ts
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import prisma from "@/lib/prisma"; // adjust the import as needed
+import prisma from "@/lib/prisma";// adjust the import as needed
 
 export async function POST(request: Request) {
   try {
+    
     const { name, email, password } = await request.json();
 
     // Check if the user already exists
