@@ -5,7 +5,7 @@ import { ThemeScript } from "../components/theme-script"
 import Header from "../components/header"
 import Footer from "../components/footer"
 import "../styles/globals.css"
-import ReCaptchaProvider from "@/components/ReCaptchaProvider"
+import NextAuthProvider from "@/components/NextAuthProvider"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -31,15 +31,17 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} ${poppins.variable} font-sans antialiased`}>
-        <ThemeProvider>
-          <ThemeScript />
-          
-          <div className="flex min-h-screen flex-col">
-            <Header />
-            <main className="flex-1">{children}</main>
-            <Footer />
-          </div>
-        </ThemeProvider>
+        <NextAuthProvider>
+          <ThemeProvider>
+            <ThemeScript />
+
+            <div className="flex min-h-screen flex-col">
+              <Header />
+              <main className="flex-1">{children}</main>
+              <Footer />
+            </div>
+          </ThemeProvider>
+        </NextAuthProvider>
       </body>
     </html>
   )
