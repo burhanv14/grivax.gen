@@ -5,6 +5,8 @@ import FeaturedCourses from "../components/featured-courses"
 import TestimonialSlider from "../components/testimonial-slider"
 import PlaceholderImage from "../components/placeholder-image"
 import ScrollToTop from "../components/scroll-to-top"
+import landing_photo from"../../public/landing_photo.png"
+import Image from "next/image"
 
 export default function Home() {
   return (
@@ -40,9 +42,10 @@ export default function Home() {
             <div className="relative mt-8 flex items-center justify-center lg:mt-0">
               <div className="relative h-[350px] w-[350px] sm:h-[400px] sm:w-[400px] md:h-[450px] md:w-[450px] lg:h-[500px] lg:w-[500px]">
                 <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary/20 to-purple-600/20 blur-3xl" />
-                <PlaceholderImage
+                <Image
                   width={500}
                   height={500}
+                  src={landing_photo}
                   alt="Grivax.gen Learning Platform"
                   className="relative z-10 rounded-2xl object-cover shadow-xl"
                 />
