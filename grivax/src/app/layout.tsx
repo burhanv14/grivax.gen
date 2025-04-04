@@ -6,6 +6,7 @@ import Header from "../components/header"
 import Footer from "../components/footer"
 import "../styles/globals.css"
 import NextAuthProvider from "@/components/NextAuthProvider"
+import { Toaster } from 'sonner'
 
 const inter = Inter({
   subsets: ["latin"],
@@ -42,6 +43,7 @@ export default function RootLayout({
             </div>
           </ThemeProvider>
         </NextAuthProvider>
+        <Toaster position="top-center" />
       </body>
     </html>
   )
