@@ -89,7 +89,7 @@ export default async function CoursesPage() {
           </p>
         </div>
         <Button asChild className="sm:self-start" size="lg">
-          <Link href={`/createNewCourse/${userId}`}>
+          <Link href={`/generate-courses/${userId}`}>
             <Plus className="mr-2 h-5 w-5" />
             Add New Course
           </Link>
@@ -130,7 +130,7 @@ export default async function CoursesPage() {
             <h3 className="text-lg font-medium mb-2">No courses created yet</h3>
             <p className="text-muted-foreground mb-4">Start creating your first course by clicking the button above.</p>
             <Button asChild>
-              <Link href={`/createNewCourse/${userId}`}>
+              <Link href={`/generate-courses/${userId}`}>
                 <Plus className="mr-2 h-4 w-4" />
                 Create Your First Course
               </Link>

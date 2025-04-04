@@ -13,7 +13,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
 model User {
   user_id   Int      @id @default(autoincrement())    
   email     String   @unique
@@ -22,6 +21,29 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   @@unique([user_id])
+}
+
+model Course {
+  id          String   @id @default(cuid())
+  userId      String
+  title       String
+  description String
+  status      String   @default("active")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  modules     Module[]
+}
+
+model Module {
+  id          String   @id @default(cuid())
+  courseId    String
+  week        Int
+  title       String
+  objectives  String[]
+  resources   Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
 }
 
 
