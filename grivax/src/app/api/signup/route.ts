@@ -6,31 +6,41 @@ import crypto from "crypto";
 
 export async function POST(request: Request) {
   try {
-    const { name, email, password } = await request.json();
+    const { name, email, password, oauthProvider } = await request.json();
 
     // Check if the user already exists
     const existingUser = await prisma.user.findUnique({
       where: { email },
     });
     if (existingUser) {
-      return NextResponse.json({ error: "User already exists" }, { status: 400 });
+      return NextResponse.json({ message: "User already exists" }, { status: 200 });
     }
 
-    // Generate a unique 10-character alphanumeric user_id
+    // Generate a unique user_id
     const user_id = crypto.randomBytes(5).toString("hex"); // 10-character hex string
 
-    // Hash the password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Create the user
-    await prisma.user.create({
-      data: {
-        user_id,
-        name,
-        email,
-        password: hashedPassword,
-      },
-    });
+    if (oauthProvider) {
+      // Handle OAuth sign-in
+      await prisma.user.create({
+        data: {
+          user_id,
+          email,
+          name,
+          password: null, // No password for OAuth users
+        },
+      });
+    } else {
+      // Handle regular sign-up
+      const hashedPassword = await bcrypt.hash(password, 10);
+      await prisma.user.create({
+        data: {
+          user_id,
+          email,
+          name,
+          password: hashedPassword,
+        },
+      });
+    }
 
     return NextResponse.json({ message: "User created successfully" }, { status: 201 });
   } catch (error) {

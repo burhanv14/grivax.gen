@@ -18,57 +18,100 @@ import { signIn } from "next-auth/react";
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isRecaptchaDone, setIsRecaptchaDone] =useState<boolean>(false);
+  const [isRecaptchaDone, setIsRecaptchaDone] = useState<boolean>(false);
   const router = useRouter();
 
-  const handleClickGoog = () => {
-    signIn("google");
+  const handleClickGoog = async () => {
+    try {
+      const result = await signIn("google", { redirect: false });
+      if (result?.ok) {
+        const userInfo = await fetch("/api/auth/session").then((res) => res.json());
+        const { user } = userInfo;
+        if (user) {
+          await fetch("/api/signup", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              name: user.name,
+              email: user.email,
+              oauthProvider: "google",
+            }),
+          });
+        }
+        router.push("/");
+      }
+    } catch (error) {
+      console.error("Google login error:", error);
+    }
   };
 
-  const handleClickGit = () => {
-    signIn("github");
+  const handleClickGit = async () => {
+    try {
+      const result = await signIn("github", { redirect: false });
+      if (result?.ok) {
+        const userInfo = await fetch("/api/auth/session").then((res) => res.json());
+        const { user } = userInfo;
+        if (user) {
+          await fetch("/api/signup", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              name: user.name,
+              email: user.email,
+              oauthProvider: "github",
+            }),
+          });
+        }
+        router.push("/");
+      }
+    } catch (error) {
+      console.error("GitHub login error:", error);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    if(!isRecaptchaDone){
+    if (!isRecaptchaDone) {
       alert("Please complete the Recaptcha Verification");
-    }
-    else{
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
+    } else {
+      e.preventDefault();
+      setIsLoading(true);
+      setError(null);
 
-    const formData = new FormData(e.currentTarget);
-    const email = formData.get("email") as string;
-    const password = formData.get("password") as string;
+      const formData = new FormData(e.currentTarget);
+      const email = formData.get("email") as string;
+      const password = formData.get("password") as string;
 
-    try {
-      // No need to hash on client side; backend compares plain password
-      const signInResponse = await signIn("credentials", {
-        email,
-        password,
-        redirect: false,
-      });
+      try {
+        // No need to hash on client side; backend compares plain password
+        const signInResponse = await signIn("credentials", {
+          email,
+          password,
+          redirect: false,
+        });
 
-      // Check for errors based on backend error messages
-      if (signInResponse?.error) {
-        if (signInResponse.error === "User not found") {
-          setError("Account not created, try signing up or check the entered credentials.");
-        } else if (signInResponse.error === "Invalid password") {
-          setError("The credentials entered are incorrect.");
+        // Check for errors based on backend error messages
+        if (signInResponse?.error) {
+          if (signInResponse.error === "User not found") {
+            setError("Account not created, try signing up or check the entered credentials.");
+          } else if (signInResponse.error === "Invalid password") {
+            setError("The credentials entered are incorrect.");
+          } else {
+            setError("Your email or password is incorrect.");
+          }
         } else {
-          setError("Your email or password is incorrect.");
+          router.push("/");
         }
-      } else {
-        router.push("/");
+      } catch (err) {
+        console.error("Login error:", err);
+        setError("An unexpected error occurred. Please try again.");
+      } finally {
+        setIsLoading(false);
       }
-    } catch (err) {
-      console.error("Login error:", err);
-      setError("An unexpected error occurred. Please try again.");
-    } finally {
-      setIsLoading(false);
     }
-  }
   };
 
   return (
@@ -131,7 +174,7 @@ export default function LoginPage() {
                 </div>
 
                 <div className="flex items-center space-x-2">
-                  <Checkbox id="remember"/>
+                  <Checkbox id="remember" />
                   <Label
                     htmlFor="remember"
                     className="text-xs sm:text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
