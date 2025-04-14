@@ -20,15 +20,14 @@ model User {
   password  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  @@unique([user_id])
 }
 
 model Course {
-  id          String   @id @default(cuid())
+  course_id          String   @id @default(cuid())
   userId      String
   title       String
-  difficulty String
-  pace      String   @default("active")
+  difficulty  String
+  pace        String   @default("active")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

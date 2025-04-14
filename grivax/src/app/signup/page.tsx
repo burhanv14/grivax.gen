@@ -12,11 +12,64 @@ import { Separator } from "@/components/ui/separator";
 import PlaceholderImage from "@/components/placeholder-image";
 import ReCaptchaElement from "@/components/ReCaptchaElement";
 import ReCaptchaProvider from "@/components/ReCaptchaProvider";
+import { signIn } from "next-auth/react";
 
 export default function SignupPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isRecaptchaDone, setIsRecaptchaDone] = useState<boolean>(false);
   const router = useRouter();
+
+  const handleClickGoog = async () => {
+    try {
+      const result = await signIn("google", { redirect: false });
+      if (result?.ok) {
+        const userInfo = await fetch("/api/auth/session").then((res) => res.json());
+        const { user } = userInfo;
+        if (user) {
+          await fetch("/api/signup", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              name: user.name,
+              email: user.email,
+              oauthProvider: "google",
+              password: null,
+            }),
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Google sign-in error:", error);
+    }
+  };
+
+  const handleClickGit = async () => {
+    try {
+      const result = await signIn("github", { redirect: false });
+      if (result?.ok) {
+        const userInfo = await fetch("/api/auth/session").then((res) => res.json());
+        const { user } = userInfo;
+        if (user) {
+          await fetch("/api/signup", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              name: user.name,
+              email: user.email,
+              oauthProvider: "github",
+              password: null,
+            }),
+          });
+        }
+      }
+    } catch (error) {
+      console.error("GitHub sign-in error:", error);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -178,7 +231,7 @@ export default function SignupPage() {
               </div>
 
               <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:mt-6">
-                <Button variant="outline" className="h-10 w-full sm:h-11" type="button">
+                <Button variant="outline" className="h-10 w-full sm:h-11" type="button" onClick={handleClickGoog}>
                   <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
                     <path
                       d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -200,7 +253,7 @@ export default function SignupPage() {
                   </svg>
                   Google
                 </Button>
-                <Button variant="outline" className="h-10 w-full sm:h-11" type="button">
+                <Button variant="outline" className="h-10 w-full sm:h-11" type="button" onClick={handleClickGit}>
                   <Github className="mr-2 h-4 w-4" />
                   GitHub
                 </Button>
