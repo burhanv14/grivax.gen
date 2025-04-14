@@ -6,8 +6,21 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import GithubProvider from "next-auth/providers/github";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 
 import prisma from "./prisma";
+
+// Extend the built-in session types
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id?: string;
+      name?: string | null;
+      email?: string | null;
+      image?: string | null;
+    }
+  }
+}
 
 export const authConfig: NextAuthOptions = {
   providers: [
@@ -57,6 +70,56 @@ export const authConfig: NextAuthOptions = {
       clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
     }),
   ],
+  callbacks: {
+    async signIn({ user, account, profile }) {
+      // Only handle OAuth sign-ins (Google and GitHub)
+      if (account?.provider === "google" || account?.provider === "github") {
+        try {
+          // Check if user already exists
+          const existingUser = await prisma.user.findUnique({
+            where: { email: user.email as string },
+          });
+
+          if (!existingUser) {
+            // Generate a unique user_id
+            const user_id = crypto.randomBytes(5).toString("hex"); // 10-character hex string
+            
+            // Create new user in database
+            await prisma.user.create({
+              data: {
+                user_id,
+                email: user.email as string,
+                name: user.name as string,
+                password: "", // No password for OAuth users
+              },
+            });
+          }
+          
+          return true;
+        } catch (error) {
+          console.error("Error during OAuth sign-in:", error);
+          return false;
+        }
+      }
+      
+      // For credentials provider, just allow sign-in
+      return true;
+    },
+    async session({ session, token }) {
+      // Add user_id to the session if available
+      if (session.user) {
+        const dbUser = await prisma.user.findUnique({
+          where: { email: session.user.email as string },
+        });
+        
+        if (dbUser) {
+          session.user.id = dbUser.user_id;
+        }
+      }
+      
+      return session;
+    },
+  },
 };
 
 export async function loginIsRequiredServer() {

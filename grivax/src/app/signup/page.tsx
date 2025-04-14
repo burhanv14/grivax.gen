@@ -13,6 +13,19 @@ import PlaceholderImage from "@/components/placeholder-image";
 import ReCaptchaElement from "@/components/ReCaptchaElement";
 import ReCaptchaProvider from "@/components/ReCaptchaProvider";
 import { signIn } from "next-auth/react";
+import { getServerSession } from 'next-auth';
+
+// Define a type that matches what we get from getServerSession
+type SessionUser = {
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+};
+
+export const getUserSession = async (): Promise<SessionUser | null> => {
+  const authUserSession = await getServerSession()
+  return authUserSession?.user || null
+}
 
 export default function SignupPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -21,19 +34,18 @@ export default function SignupPage() {
 
   const handleClickGoog = async () => {
     try {
-      const result = await signIn("google", { redirect: false });
+      const result = await signIn("google", { redirect: true });
       if (result?.ok) {
-        const userInfo = await fetch("/api/auth/session").then((res) => res.json());
-        const { user } = userInfo;
-        if (user) {
+        const userInfo = await getUserSession();
+        if (userInfo) {
           await fetch("/api/signup", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              name: user.name,
-              email: user.email,
+              name: userInfo?.name,
+              email: userInfo?.email,
               oauthProvider: "google",
               password: null,
             }),
@@ -50,17 +62,16 @@ export default function SignupPage() {
     try {
       const result = await signIn("github", { redirect: false });
       if (result?.ok) {
-        const userInfo = await fetch("/api/auth/session").then((res) => res.json());
-        const { user } = userInfo;
-        if (user) {
+        const userInfo = await getUserSession();
+        if (userInfo) {
           await fetch("/api/signup", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              name: user.name,
-              email: user.email,
+              name: userInfo?.name,
+              email: userInfo?.email,
               oauthProvider: "github",
               password: null,
             }),

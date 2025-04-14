@@ -4,8 +4,10 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent } from "@/components/ui/card"
-import { loginIsRequiredServer } from "@/lib/auth"
+import { loginIsRequiredServer, authConfig } from "@/lib/auth"
 import Link from "next/link"
+import { getServerSession } from "next-auth"
+import prisma from "@/lib/prisma"
 
 export const metadata = {
   title: "Courses | Grivax.gen",
@@ -18,13 +20,22 @@ export const metadata = {
 export default async function CoursesPage() {
   await loginIsRequiredServer()
 
-  // Get current user - modify this based on your auth system
-  const userId = "user123" // Default placeholder
+  // Get current user from session
+  const session = await getServerSession(authConfig)
+  let userId = ""
+  
   try {
-    // You can replace this with your actual auth logic to get the current user
-    // For example, if you're using auth.js/NextAuth:
-    // const session = await getServerSession(authOptions);
-    // userId = session?.user?.id;
+    if (session?.user?.email) {
+      // Find user in database by email
+      const dbUser = await prisma.user.findUnique({
+        where: { email: session.user.email },
+      })
+      
+      if (dbUser) {
+        userId = dbUser.user_id
+      }
+      // console.log(userId);
+    }
   } catch (error) {
     console.error("Error getting current user:", error)
   }
