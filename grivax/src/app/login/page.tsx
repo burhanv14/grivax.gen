@@ -25,21 +25,6 @@ export default function LoginPage() {
     try {
       const result = await signIn("google", { redirect: false });
       if (result?.ok) {
-        const userInfo = await fetch("/api/auth/session").then((res) => res.json());
-        const { user } = userInfo;
-        if (user) {
-          await fetch("/api/signup", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              name: user.name,
-              email: user.email,
-              oauthProvider: "google",
-            }),
-          });
-        }
         router.push("/");
       }
     } catch (error) {
@@ -51,21 +36,6 @@ export default function LoginPage() {
     try {
       const result = await signIn("github", { redirect: false });
       if (result?.ok) {
-        const userInfo = await fetch("/api/auth/session").then((res) => res.json());
-        const { user } = userInfo;
-        if (user) {
-          await fetch("/api/signup", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              name: user.name,
-              email: user.email,
-              oauthProvider: "github",
-            }),
-          });
-        }
         router.push("/");
       }
     } catch (error) {

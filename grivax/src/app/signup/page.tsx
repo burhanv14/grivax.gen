@@ -39,6 +39,7 @@ export default function SignupPage() {
             }),
           });
         }
+        router.push("/");
       }
     } catch (error) {
       console.error("Google sign-in error:", error);
@@ -65,6 +66,7 @@ export default function SignupPage() {
             }),
           });
         }
+        router.push("/");
       }
     } catch (error) {
       console.error("GitHub sign-in error:", error);

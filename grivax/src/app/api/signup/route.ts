@@ -26,7 +26,7 @@ export async function POST(request: Request) {
           user_id,
           email,
           name,
-          password: null, // No password for OAuth users
+          password: "", // No password for OAuth users
         },
       });
     } else {
