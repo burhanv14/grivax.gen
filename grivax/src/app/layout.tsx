@@ -7,6 +7,7 @@ import Footer from "../components/footer"
 import "../styles/globals.css"
 import NextAuthProvider from "@/components/NextAuthProvider"
 import { Toaster } from 'sonner'
+import ChatbotButton from "@/components/chatbot/ChatbotButton"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -40,6 +41,7 @@ export default function RootLayout({
               <Header />
               <main className="flex-1">{children}</main>
               <Footer />
+              <ChatbotButton />
             </div>
           </ThemeProvider>
         </NextAuthProvider>
@@ -48,4 +50,3 @@ export default function RootLayout({
     </html>
   )
 }
-
