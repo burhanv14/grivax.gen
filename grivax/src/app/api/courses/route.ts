@@ -13,9 +13,9 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { userId, modules, status } = body;
+    const { user_id, modules, status } = body;
 
-    if (!userId || !modules || !Array.isArray(modules) || modules.length === 0) {
+    if (!user_id || !modules || !Array.isArray(modules) || modules.length === 0) {
       return NextResponse.json(
         { error: 'Invalid request data' },
         { status: 400 }
@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     }
 
     console.log('Creating course with data:', {
-      userId,
+      user_id,
       moduleCount: modules.length,
       firstModuleTitle: modules[0].title
     });
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     // Create the course in the database
     const course = await db.course.create({
       data: {
-        userId,
+        user_id,
         title: modules[0].title,
         description: `A ${modules.length}-week course covering ${modules[0].title}`,
         status: status || 'active',

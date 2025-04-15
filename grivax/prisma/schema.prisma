@@ -24,7 +24,7 @@ model User {
 
 model Course {
   course_id          String   @id @default(cuid())
-  userId      String
+  user_id      String
   title       String
   difficulty  String
   pace        String   @default("active")
