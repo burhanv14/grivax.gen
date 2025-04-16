@@ -7,13 +7,13 @@ const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || '',
 })
 
-export async function POST(request: Request) {
+export async function POST(request: Request, { params }: { params: { user_id: string } }) {
   try {
     const data = await request.json()
     
     // Log the received data
     console.log('Received course generation request:', {
-      user_id: data.user_id,
+      user_id: params.user_id,
       topic: data.topic,
       difficulty: data.difficulty,
       pace: data.pace
@@ -94,7 +94,7 @@ export async function POST(request: Request) {
       success: true,
       course_id,
       courseStructure,
-      redirectUrl: `/generate-courses/${data.user_id}/${course_id}`
+      redirectUrl: `/generate-courses/${params.user_id}/${course_id}`
     })
   } catch (error) {
     console.error('Error processing course generation request:', error)

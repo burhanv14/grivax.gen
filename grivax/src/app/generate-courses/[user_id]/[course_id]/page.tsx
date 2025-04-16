@@ -40,7 +40,7 @@ export default function CoursePage() {
   useEffect(() => {
     const fetchCourseData = async () => {
       try {
-        const response = await fetch(`/api/generate-course/${params.course_id}`)
+        const response = await fetch(`/api/generate-course/${params.user_id}/${params.course_id}`)
         if (!response.ok) {
           throw new Error("Failed to fetch course data")
         }
@@ -98,5 +98,109 @@ export default function CoursePage() {
     }
   }
 
-  // ... rest of the component code stays the same ...
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <p className="text-red-500 mb-4">{error}</p>
+        <Button onClick={() => router.back()}>Go Back</Button>
+      </div>
+    )
+  }
+
+  if (!courseData) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <p className="text-gray-500 mb-4">No course data available</p>
+        <Button onClick={() => router.back()}>Go Back</Button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="container mx-auto py-8 px-4">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-2">{courseData.courseStructure.title}</h1>
+        <p className="text-gray-600">{courseData.courseStructure.description}</p>
+      </div>
+
+      <div className="space-y-6">
+        {courseData.courseStructure.modules.map((module, index) => (
+          <Card key={index} className="border rounded-lg shadow-sm">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xl">Week {module.week}: {module.title}</CardTitle>
+                <Badge variant="outline">Week {module.week}</Badge>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <h3 className="font-semibold mb-2 flex items-center gap-2">
+                    <Target className="h-4 w-4" />
+                    Learning Objectives
+                  </h3>
+                  <ul className="list-disc list-inside space-y-1">
+                    {module.objectives.map((objective, idx) => (
+                      <li key={idx} className="text-gray-600">{objective}</li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold mb-2 flex items-center gap-2">
+                    <Book className="h-4 w-4" />
+                    Resources
+                  </h3>
+                  <div className="grid gap-2">
+                    {module.resources.map((resource, idx) => (
+                      <div key={idx} className="flex items-center gap-2 p-2 bg-gray-50 rounded">
+                        {resource.type === 'video' ? (
+                          <Video className="h-4 w-4 text-blue-500" />
+                        ) : (
+                          <FileText className="h-4 w-4 text-green-500" />
+                        )}
+                        <a
+                          href={resource.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline"
+                        >
+                          {resource.title}
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <div className="mt-8 flex justify-end">
+        <Button
+          onClick={handleAccept}
+          disabled={isAccepting}
+          className="bg-green-600 hover:bg-green-700"
+        >
+          {isAccepting ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            'Accept Course'
+          )}
+        </Button>
+      </div>
+    </div>
+  )
 } 

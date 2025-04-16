@@ -45,13 +45,12 @@ export default function GenerateCoursesPage({ params }: GenerateCoursesPageProps
         setProgress((prev) => Math.min(prev + 10, 90))
       }, 1000)
 
-      const response = await fetch("/api/generate-course", {
+      const response = await fetch(`/api/generate-course/${params.user_id}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          user_id: params.user_id,
           ...inputs,
         }),
       })
