@@ -65,6 +65,52 @@ export async function POST(
       }
     })
     
+    // Fetch the genCourse.id for acknowledgment
+    const genCourse = await prisma.genCourse.findFirst({
+      where: {
+        user_id: params.user_id,
+        course_id: params.course_id
+      },
+      select: {
+        id: true
+      }
+    })
+    
+    if (genCourse) {
+      // Send acknowledgment to the new endpoint
+      const acknowledgmentUrl = `/api/generate-course/${params.user_id}/${params.course_id}/${genCourse.id}`
+      console.log(`Sending acknowledgment to: ${acknowledgmentUrl}`)
+      
+      // Make a request to the acknowledgment endpoint
+      try {
+        // Get the host from the request headers
+        const host = request.headers.get('host') || 'localhost:3000'
+        const protocol = process.env.NODE_ENV === 'development' ? 'http' : 'https'
+        
+        // Construct a complete URL
+        const fullUrl = `${protocol}://${host}${acknowledgmentUrl}`
+        console.log(`Full URL for acknowledgment: ${fullUrl}`)
+        
+        const response = await fetch(fullUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            message: 'Course update acknowledged',
+            course_id: params.course_id,
+            user_id: params.user_id
+          }),
+        })
+        
+        if (!response.ok) {
+          console.error('Failed to send acknowledgment:', await response.text())
+        }
+      } catch (ackError) {
+        console.error('Error sending acknowledgment:', ackError)
+      }
+    }
+    
     // Return success response with updated data
     return NextResponse.json({ 
       success: true,
