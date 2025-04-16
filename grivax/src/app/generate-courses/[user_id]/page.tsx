@@ -23,7 +23,7 @@ export default function GenerateCoursesPage({ params }: GenerateCoursesPageProps
   const [inputs, setInputs] = useState({
     topic: "",
     difficulty: "beginner",
-    pace: "5 hours/week",
+    pace: "4",
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
@@ -102,13 +102,14 @@ export default function GenerateCoursesPage({ params }: GenerateCoursesPageProps
                 />
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-                <div className="w-full sm:w-auto">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 ">
+                <div className="flex flex-col space-y-3 ">
+                  <label className="text-sm font-medium text-muted-foreground pl-1">Difficulty Level</label>
                   <Select
                     value={inputs.difficulty}
                     onValueChange={(value) => setInputs({ ...inputs, difficulty: value })}
                   >
-                    <SelectTrigger className="w-full sm:w-[180px]">
+                    <SelectTrigger className="w-full h-11 dark:bg-slate-900">
                       <SelectValue placeholder="Difficulty" />
                     </SelectTrigger>
                     <SelectContent>
@@ -119,44 +120,91 @@ export default function GenerateCoursesPage({ params }: GenerateCoursesPageProps
                   </Select>
                 </div>
 
-                <div className="w-full sm:w-auto">
-                  <Select 
-                    value={inputs.pace} 
-                    onValueChange={(value) => setInputs({ ...inputs, pace: value })}
-                  >
-                    <SelectTrigger className="w-full sm:w-[180px]">
-                      <SelectValue placeholder="Learning Pace" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="2 hours/week">2 hours/week</SelectItem>
-                      <SelectItem value="5 hours/week">5 hours/week</SelectItem>
-                      <SelectItem value="10 hours/week">10 hours/week</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="flex flex-col space-y-2">
+                  <label className="text-sm font-medium text-muted-foreground">Course Duration</label>
+                  <div className="relative flex items-center">
+                    <div className="flex items-center h-11 rounded-md overflow-hidden bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full">
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          const currentValue = parseInt(inputs.pace);
+                          if (currentValue > 1) {
+                            setInputs({ ...inputs, pace: (currentValue - 1).toString() });
+                          }
+                        }}
+                        className="h-full w-12 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
+                        aria-label="Decrease duration"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-slate-600 dark:text-slate-300">
+                          <path d="M5 12h14"></path>
+                        </svg>
+                      </button>
+                      <div className="flex items-center justify-center min-w-[50px]">
+                        <input
+                          id="duration"
+                          type="number"
+                          min="1"
+                          max="52"
+                          value={inputs.pace}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            if (value === "" || (parseInt(value) >= 1 && parseInt(value) <= 52)) {
+                              setInputs({ ...inputs, pace: value });
+                            }
+                          }}
+                          className="w-full text-center py-1 focus:outline-none bg-transparent text-lg font-medium text-slate-900 dark:text-white"
+                        />
+                      </div>
+                      <div className="h-full px-3 flex items-center justify-center text-sm text-slate-500 dark:text-slate-400">
+                        weeks
+                      </div>
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          const currentValue = parseInt(inputs.pace);
+                          if (currentValue < 52) {
+                            setInputs({ ...inputs, pace: (currentValue + 1).toString() });
+                          }
+                        }}
+                        className="h-full w-12 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
+                        aria-label="Increase duration"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-slate-600 dark:text-slate-300">
+                          <path d="M12 5v14"></path>
+                          <path d="M5 12h14"></path>
+                        </svg>
+                      </button>
+                    </div>
+                    <div className="absolute -bottom-5 left-0 text-xs text-slate-500 dark:text-slate-400">
+                      Recommended: 4-12 weeks
+                    </div>
+                  </div>
                 </div>
 
-                <Button
-                  onClick={handleSubmit}
-                  disabled={loading || !inputs.topic.trim()}
-                  className="sm:ml-auto w-full sm:w-auto transition-all"
-                  size="lg"
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Generating...
-                    </>
-                  ) : (
-                    <>
-                      <BookOpen className="mr-2 h-4 w-4" />
-                      Generate Course
-                    </>
-                  )}
-                </Button>
+                <div className="flex flex-col justify-end">
+                  <Button
+                    onClick={handleSubmit}
+                    disabled={loading || !inputs.topic.trim()}
+                    className="w-full h-11 transition-all"
+                    size="lg"
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <BookOpen className="mr-2 h-4 w-4" />
+                        Generate Course
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
 
               {loading && (
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <Progress value={progress} className="w-full h-2" />
                   <p className="text-sm text-muted-foreground text-center">
                     {progress < 90 ? "Generating your personalized course..." : "Finalizing your course..."}

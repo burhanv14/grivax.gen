@@ -20,12 +20,16 @@ export async function POST(request: Request, { params }: { params: { user_id: st
       pace: data.pace
     })
 
+    // Format the pace value for the prompt
+    const durationInWeeks = parseInt(data.pace) || 4; // Default to 4 weeks if parsing fails
+    const formattedDuration = `${durationInWeeks} ${durationInWeeks === 1 ? 'week' : 'weeks'}`;
+
     // Construct the prompt for course generation
     const prompt = `You are an AI capable of curating course content, coming up with relevant chapter titles, and creating comprehensive learning paths. 
     Please create a detailed course outline for the following parameters:
     - Topic: ${data.topic}
     - Difficulty Level: ${data.difficulty}
-    - Learning Pace: ${data.pace}
+    - Course Duration: ${formattedDuration}
 
     Please provide a structured course outline that includes:
     1. Main topics/chapters
@@ -46,7 +50,9 @@ export async function POST(request: Request, { params }: { params: { user_id: st
           "timeSpent": "2 hours"
         }
       ]
-    }`
+    }
+
+    Important: Structure the course content to fit within the specified duration of ${formattedDuration}. Each module should represent one week of content, and the total number of modules should match the course duration.`
 
     // Generate course content using Claude
     const response = await client.messages.create({
