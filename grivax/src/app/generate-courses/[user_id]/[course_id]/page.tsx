@@ -12,11 +12,7 @@ interface CourseModule {
   week: number
   title: string
   objectives: string[]
-  resources: Array<{
-    type: string
-    title: string
-    url: string
-  }>
+  timeSpent: string
 }
 
 interface CourseData {
@@ -170,28 +166,10 @@ export default function CoursePage() {
 
                 <div>
                   <h3 className="font-semibold mb-2 flex items-center gap-2">
-                    <Book className="h-4 w-4" />
-                    Resources
+                    <Clock className="h-4 w-4" />
+                    Time Required
                   </h3>
-                  <div className="grid gap-2">
-                    {module.resources.map((resource, idx) => (
-                      <div key={idx} className="flex items-center gap-2 p-2 bg-gray-50 rounded">
-                        {resource.type === 'video' ? (
-                          <Video className="h-4 w-4 text-blue-500" />
-                        ) : (
-                          <FileText className="h-4 w-4 text-green-500" />
-                        )}
-                        <a
-                          href={resource.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:underline"
-                        >
-                          {resource.title}
-                        </a>
-                      </div>
-                    ))}
-                  </div>
+                  <p className="text-gray-600">{module.timeSpent}</p>
                 </div>
               </div>
             </CardContent>

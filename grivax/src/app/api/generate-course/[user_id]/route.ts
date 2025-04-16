@@ -43,13 +43,7 @@ export async function POST(request: Request, { params }: { params: { user_id: st
           "week": 1,
           "title": "Module Title",
           "objectives": ["Objective 1", "Objective 2"],
-          "resources": [
-            {
-              "type": "article",
-              "title": "Resource Title",
-              "url": "Resource URL"
-            }
-          ]
+          "timeSpent": "2 hours"
         }
       ]
     }`
