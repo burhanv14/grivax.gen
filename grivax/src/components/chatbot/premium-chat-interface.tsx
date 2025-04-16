@@ -39,7 +39,7 @@ export default function PremiumChatInterface({ onClose }: ChatInterfaceProps) {
     const welcomeMessage = {
       id: generateId(),
       role: "assistant" as const,
-      content: "Welcome to Axel, your premium AI assistant. How may I assist you today?",
+      content: "Welcome to Axel, your AI assistant. How may I assist you today?",
       timestamp: new Date(),
     }
 
@@ -303,7 +303,7 @@ export default function PremiumChatInterface({ onClose }: ChatInterfaceProps) {
               </form>
 
               <div className="mt-2 text-center">
-                <p className="text-xs text-muted-foreground">Powered by advanced AI technology</p>
+                <p className="text-xs text-muted-foreground">&copy; {new Date().getFullYear()} Grivax</p>
               </div>
             </div>
           </motion.div>

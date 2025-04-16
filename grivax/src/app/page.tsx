@@ -170,7 +170,8 @@ export default function Home() {
       </section>
 
       {/* Scroll to Top Button */}
-      <ScrollToTop />
+      
+      {/* <ScrollToTop/> */}
     </div>
   )
 }

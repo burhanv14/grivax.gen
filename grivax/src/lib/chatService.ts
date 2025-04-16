@@ -23,7 +23,8 @@ export async function getAIResponse(
       2. If you're unsure about something, say so
       3. Use a friendly and professional tone
       4. When relevant, reference the current page context in your responses
-      5. If the question is about the current page, use the context to provide specific answers`
+      5. If the question is about the current page, use the context to provide specific answers
+      6. Make it sound like you're a human talking to a human. Do not mention "based on the current page context" or anything like that."`
     };
 
     // Make the API call to our chat endpoint
@@ -46,6 +47,9 @@ export async function getAIResponse(
     return data.message;
   } catch (error) {
     console.error('Error getting AI response:', error);
+    if(error instanceof Error && error.message == "Unauthorized") {
+      return "Hi! You will have to log in before you can talk to me. :)";
+    }
     if (error instanceof Error) {
       return `I apologize, but I encountered an error: ${error.message}. Please try again.`;
     }
