@@ -1,5 +1,4 @@
 "use client"
-
 import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -8,8 +7,6 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { NextResponse } from 'next/server'
-import prisma from '@/lib/prisma'
 
 interface CourseModule {
   week: number
@@ -42,25 +39,14 @@ export default function CoursePage() {
   useEffect(() => {
     const fetchCourseData = async () => {
       try {
-        const data = await prisma.genCourse.findFirst({
-          where: {
-            user_id: params.user_id as string,
-            course_id: params.course_id as string,
-          },
-        })
+        const response = await fetch(`/api/generate-course/${params.user_id}/${params.course_id}`)
+        const data = await response.json()
         
-        if (!data) {
-          console.error(`Course not found for user: ${params.user_id}, course: ${params.course_id}`)
-          return NextResponse.json(
-            { error: 'Course not found' },
-            { status: 404 }
-          )
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to fetch course data')
         }
         
-        console.log('Course data fetched from database:', data)
-        
         if (!data.title || !data.modules) {
-          console.error('Invalid course data structure:', data)
           throw new Error("Invalid course data structure")
         }
         
@@ -70,12 +56,11 @@ export default function CoursePage() {
           courseStructure: {
             title: data.title,
             description: data.description || "No description available",
-            modules: (data.modules as unknown as CourseModule[])
+            modules: data.modules
           }
         }
         
         setCourseData(formattedData)
-        console.log('Course data set in state:', formattedData)
       } catch (err) {
         console.error('Error in fetchCourseData:', err)
         setError(err instanceof Error ? err.message : "An error occurred")
@@ -84,7 +69,7 @@ export default function CoursePage() {
       }
     }
 
-    if (params.course_id) {
+    if (params.user_id && params.course_id) {
       fetchCourseData()
     }
   }, [params.course_id, params.user_id])
