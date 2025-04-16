@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { Anthropic } from '@anthropic-ai/sdk'
 import crypto from 'crypto'
-import { storeCourseData } from './[course_id]/route'
+import prisma from '@/lib/prisma'
 
 // Initialize Anthropic client
 const client = new Anthropic({
@@ -91,10 +91,23 @@ export async function POST(request: Request, { params }: { params: { user_id: st
     // Log the generated course structure
     console.log('Generated course structure:', courseStructure)
 
-    // Store the course data
-    console.log(`About to store course data for ID: ${course_id}`)
-    storeCourseData(course_id, { courseStructure })
-    console.log(`Course data stored for ID: ${course_id}`)
+    // Store the course data in the database
+    try {
+      const genCourse = await prisma.genCourse.create({
+        data: {
+          user_id: params.user_id,
+          course_id: course_id,
+          title: courseStructure.title,
+          description: courseStructure.description,
+          modules: courseStructure.modules,
+        }
+      })
+      
+      console.log(`Course data stored in database with ID: ${genCourse.id}`)
+    } catch (dbError) {
+      console.error('Error storing course in database:', dbError)
+      throw new Error('Failed to store course in database')
+    }
 
     return NextResponse.json({ 
       success: true,

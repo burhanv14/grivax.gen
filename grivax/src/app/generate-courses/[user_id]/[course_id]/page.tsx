@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
+import { NextResponse } from 'next/server'
+import prisma from '@/lib/prisma'
 
 interface CourseModule {
   week: number
@@ -40,31 +42,35 @@ export default function CoursePage() {
   useEffect(() => {
     const fetchCourseData = async () => {
       try {
-        console.log(`Fetching course data for user: ${params.user_id}, course: ${params.course_id}`)
-        const response = await fetch(`/api/generate-course/${params.user_id}/${params.course_id}`)
-        console.log('API response status:', response.status)
+        const data = await prisma.genCourse.findFirst({
+          where: {
+            user_id: params.user_id as string,
+            course_id: params.course_id as string,
+          },
+        })
         
-        if (!response.ok) {
-          const errorData = await response.json()
-          console.error('API error response:', errorData)
-          throw new Error(errorData.error || "Failed to fetch course data")
+        if (!data) {
+          console.error(`Course not found for user: ${params.user_id}, course: ${params.course_id}`)
+          return NextResponse.json(
+            { error: 'Course not found' },
+            { status: 404 }
+          )
         }
         
-        const data = await response.json()
-        console.log('API response data:', data)
+        console.log('Course data fetched from database:', data)
         
-        if (!data.courseStructure || !data.courseStructure.modules) {
+        if (!data.title || !data.modules) {
           console.error('Invalid course data structure:', data)
           throw new Error("Invalid course data structure")
         }
         
-        // Ensure the data structure matches what the component expects
+        // Format the data to match the expected structure
         const formattedData = {
           course_id: data.course_id,
           courseStructure: {
-            title: data.courseStructure.title || "Untitled Course",
-            description: data.courseStructure.description || "No description available",
-            modules: data.courseStructure.modules || []
+            title: data.title,
+            description: data.description || "No description available",
+            modules: (data.modules as unknown as CourseModule[])
           }
         }
         
@@ -98,6 +104,8 @@ export default function CoursePage() {
         },
         body: JSON.stringify({
           user_id: params.user_id,
+          title: courseData.courseStructure.title,
+          description: courseData.courseStructure.description,
           modules: courseData.courseStructure.modules,
           status: 'active'
         })
