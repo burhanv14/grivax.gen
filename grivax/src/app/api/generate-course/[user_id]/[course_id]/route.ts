@@ -52,10 +52,24 @@ export async function POST(
       courseData: data
     })
     
-    // Return success response
+    // Update the course data in the database
+    const updatedCourse = await prisma.genCourse.update({
+      where: {
+        course_id: params.course_id,
+        user_id: params.user_id
+      },
+      data: {
+        title: data.title,
+        description: data.description,
+        modules: data.modules
+      }
+    })
+    
+    // Return success response with updated data
     return NextResponse.json({ 
       success: true,
-      message: 'Course data received successfully'
+      message: 'Course data updated successfully',
+      data: updatedCourse
     })
   } catch (error) {
     console.error('Error processing course data:', error)
