@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { Anthropic } from '@anthropic-ai/sdk'
 import crypto from 'crypto'
+import { storeCourseData } from './[course_id]/route'
 
 // Initialize Anthropic client
 const client = new Anthropic({
@@ -89,6 +90,11 @@ export async function POST(request: Request, { params }: { params: { user_id: st
 
     // Log the generated course structure
     console.log('Generated course structure:', courseStructure)
+
+    // Store the course data
+    console.log(`About to store course data for ID: ${course_id}`)
+    storeCourseData(course_id, { courseStructure })
+    console.log(`Course data stored for ID: ${course_id}`)
 
     return NextResponse.json({ 
       success: true,

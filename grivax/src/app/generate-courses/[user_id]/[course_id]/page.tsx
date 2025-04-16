@@ -40,17 +40,38 @@ export default function CoursePage() {
   useEffect(() => {
     const fetchCourseData = async () => {
       try {
+        console.log(`Fetching course data for user: ${params.user_id}, course: ${params.course_id}`)
         const response = await fetch(`/api/generate-course/${params.user_id}/${params.course_id}`)
+        console.log('API response status:', response.status)
+        
         if (!response.ok) {
-          throw new Error("Failed to fetch course data")
+          const errorData = await response.json()
+          console.error('API error response:', errorData)
+          throw new Error(errorData.error || "Failed to fetch course data")
         }
+        
         const data = await response.json()
+        console.log('API response data:', data)
+        
         if (!data.courseStructure || !data.courseStructure.modules) {
+          console.error('Invalid course data structure:', data)
           throw new Error("Invalid course data structure")
         }
-        setCourseData(data)
-        console.log(data);
+        
+        // Ensure the data structure matches what the component expects
+        const formattedData = {
+          course_id: data.course_id,
+          courseStructure: {
+            title: data.courseStructure.title || "Untitled Course",
+            description: data.courseStructure.description || "No description available",
+            modules: data.courseStructure.modules || []
+          }
+        }
+        
+        setCourseData(formattedData)
+        console.log('Course data set in state:', formattedData)
       } catch (err) {
+        console.error('Error in fetchCourseData:', err)
         setError(err instanceof Error ? err.message : "An error occurred")
       } finally {
         setLoading(false)
@@ -60,7 +81,7 @@ export default function CoursePage() {
     if (params.course_id) {
       fetchCourseData()
     }
-  }, [params.course_id])
+  }, [params.course_id, params.user_id])
 
   const handleAccept = async () => {
     if (!courseData?.courseStructure?.modules) {
