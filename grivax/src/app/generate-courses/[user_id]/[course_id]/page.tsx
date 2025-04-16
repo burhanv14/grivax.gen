@@ -388,7 +388,8 @@ export default function CoursePage() {
 
     setIsAccepting(true)
     try {
-      const response = await fetch("/api/courses", {
+      // First, send the course data to the API endpoint
+      const apiResponse = await fetch(`/api/generate-course/${params.user_id}/${params.course_id}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -402,11 +403,11 @@ export default function CoursePage() {
         }),
       })
 
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to save course")
+      if (!apiResponse.ok) {
+        const apiData = await apiResponse.json()
+        throw new Error(apiData.error || "Failed to send course data to API")
       }
+      
 
       toast.success("Course added to your collection!")
       router.push("/courses")
@@ -471,7 +472,7 @@ export default function CoursePage() {
             className="transition-all duration-300"
             proOptions={{ hideAttribution: true }}
           >
-            <Background color="var(--muted-foreground)" gap={20} size={1} variant="dots" className="opacity-30" />  
+            <Background color="var(--muted-foreground)" gap={20} size={1} className="opacity-30" />  
             <Controls
               showInteractive={false}
               className="bg-background/80 backdrop-blur-sm border rounded-md shadow-md"
@@ -526,7 +527,7 @@ export default function CoursePage() {
                     <div>
                       <h3 className="font-semibold mb-4 flex items-center gap-2">
                         <Clock className="h-5 w-5 text-primary" />
-                        Time Required
+                        Time to be Spent
                       </h3>
                       <div className="space-y-6">
                         <div className="flex items-center justify-between">

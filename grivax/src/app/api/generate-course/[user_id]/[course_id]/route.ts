@@ -36,4 +36,32 @@ export async function GET(
       { status: 500 }
     )
   }
+}
+
+export async function POST(
+  request: Request,
+  { params }: { params: { user_id: string; course_id: string } }
+) {
+  try {
+    const data = await request.json()
+    
+    // Log the received course data
+    console.log('Received course data from frontend:', {
+      user_id: params.user_id,
+      course_id: params.course_id,
+      courseData: data
+    })
+    
+    // Return success response
+    return NextResponse.json({ 
+      success: true,
+      message: 'Course data received successfully'
+    })
+  } catch (error) {
+    console.error('Error processing course data:', error)
+    return NextResponse.json(
+      { error: 'Failed to process course data' },
+      { status: 500 }
+    )
+  }
 } 

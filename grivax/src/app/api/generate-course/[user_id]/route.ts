@@ -34,7 +34,7 @@ export async function POST(request: Request, { params }: { params: { user_id: st
     Please provide a structured course outline that includes:
     1. Main topics/chapters
     2. Subtopics for each chapter
-    3. Estimated time required for each topic
+    3. Estimated time required for each topic(number of hours & not a range)
     4. Prerequisites (if any)
     5. Learning objectives for each chapter
 
