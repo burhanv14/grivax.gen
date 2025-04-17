@@ -124,17 +124,49 @@ export async function POST(
       detailedContent: detailedCourseContent
     }
     
-    // Print the course details to console
-    console.log('Generated detailed course:', COURSE_DETAILS)
-    const chapterDetails = {
-      title: detailedCourseContent.units[0].chapters[0].title,
-      description: detailedCourseContent.units[0].chapters[0].description,
-      estimatedTime: detailedCourseContent.units[0].chapters[0].estimatedTime,
-      learningPoints: detailedCourseContent.units[0].chapters[0].learningPoints,
-      resources: detailedCourseContent.units[0].chapters[0].resources,
-      youtubeSearchQuery: detailedCourseContent.units[0].chapters[0].youtubeSearchQuery
+    // Check if the course exists in the Course table, if not create it
+    let course;
+    try {
+      course = await prisma.course.findUnique({
+        where: {
+          course_id: genCourse.course_id
+        }
+      });
+      
+      if (!course) {
+        console.log(`Course with ID ${genCourse.course_id} not found, creating it...`);
+        course = await prisma.course.create({
+          data: {
+            course_id: genCourse.course_id,
+            user_id: genCourse.user_id,
+            genId: genCourse.id,
+            title: genCourse.title,
+            image: courseImage
+          }
+        });
+        console.log(`Created course with ID: ${course.course_id}`);
+      } else {
+        console.log(`Found existing course with ID: ${course.course_id}`);
+      }
+    } catch (courseError) {
+      console.error('Error checking/creating course:', courseError);
+      return NextResponse.json(
+        { error: 'Failed to check/create course' },
+        { status: 500 }
+      );
     }
-    console.log('Generated chapter',createChapter(chapterDetails))
+    
+    // Create a unit with its chapters
+    const unitDetails = {
+      unitNumber: detailedCourseContent.units[0].unitNumber,
+      title: detailedCourseContent.units[0].title,
+      description: detailedCourseContent.units[0].description,
+      chapters: detailedCourseContent.units[0].chapters
+    };
+    
+    // Create the unit and its chapters
+    const createdUnit = await createUnit(course.course_id, unitDetails);
+    console.log('Created unit with chapters:', createdUnit);
     
     // Return success response
     return NextResponse.json({ 
@@ -143,7 +175,8 @@ export async function POST(
       id: params.id,
       course_id: params.course_id,
       user_id: params.user_id,
-      courseDetails: COURSE_DETAILS
+      courseDetails: COURSE_DETAILS,
+      createdUnit: createdUnit
     })
   } catch (error) {
     console.error('Error processing acknowledgment:', error)
@@ -455,5 +488,96 @@ async function getYoutubeVideoLink(searchQuery: string) {
     console.error('Error fetching YouTube video:', error);
     // Return a default video link if there's an error
     return 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'; // Default video link
+  }
+}
+
+/**
+ * Creates a unit with multiple chapters and stores them in the database
+ * 
+ * @param course_id - The ID of the course the unit belongs to
+ * @param unitDetails - Object containing unit details
+ * @returns The created unit with its chapters
+ */
+async function createUnit(course_id: string, unitDetails: {
+  unitNumber: number;
+  title: string;
+  description: string;
+  chapters: Array<{
+    chapterNumber: number;
+    title: string;
+    description: string;
+    estimatedTime: string;
+    learningPoints: string[];
+    resources: string[];
+    youtubeSearchQuery: string;
+  }>;
+}) {
+  try {
+    console.log(`Creating unit ${unitDetails.unitNumber}: ${unitDetails.title}`);
+    
+    // Create the unit in the database
+    const unit = await prisma.unit.create({
+      data: {
+        course_id: course_id,
+        name: unitDetails.title
+      }
+    });
+    
+    console.log(`Created unit with ID: ${unit.unit_id}`);
+    
+    // Create chapters for the unit
+    const createdChapters = [];
+    
+    for (const chapterDetail of unitDetails.chapters) {
+      try {
+        // Create chapter using the createChapter helper function
+        const chapterContent = await createChapter({
+          title: chapterDetail.title,
+          description: chapterDetail.description,
+          estimatedTime: chapterDetail.estimatedTime,
+          learningPoints: chapterDetail.learningPoints,
+          resources: chapterDetail.resources,
+          youtubeSearchQuery: chapterDetail.youtubeSearchQuery
+        });
+        
+        // Store the chapter in the database
+        const chapter = await prisma.chapter.create({
+          data: {
+            unit_id: unit.unit_id,
+            name: chapterContent.name,
+            youtubeVidLink: chapterContent.youtubeVidLink,
+            readingMaterial: chapterContent.readingMaterial
+          }
+        });
+        
+        console.log(`Created chapter with ID: ${chapter.chapter_id}`);
+        createdChapters.push(chapter);
+      } catch (chapterError) {
+        console.error(`Error creating chapter ${chapterDetail.chapterNumber}:`, chapterError);
+        // Continue with other chapters even if one fails
+      }
+    }
+    
+    // Fetch the updated unit with its chapters
+    const updatedUnit = await prisma.unit.findUnique({
+      where: {
+        unit_id: unit.unit_id
+      },
+      include: {
+        chapters: true
+      }
+    });
+    
+    if (!updatedUnit) {
+      throw new Error(`Failed to fetch updated unit with ID: ${unit.unit_id}`);
+    }
+    
+    console.log(`Fetched unit with ${updatedUnit.chapters.length} chapters`);
+    
+    // Return the updated unit with its chapters
+    return updatedUnit;
+  } catch (error) {
+    console.error('Error creating unit:', error);
+    throw new Error(`Failed to create unit ${unitDetails.unitNumber}`);
   }
 } 
