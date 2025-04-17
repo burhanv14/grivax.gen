@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { PrismaClient } from "@prisma/client"
+import { getServerSession } from "next-auth"
+import { authConfig } from "@/lib/auth"
 
 const prisma = new PrismaClient()
 
@@ -14,7 +16,19 @@ export async function GET(request: NextRequest, { params }: { params: { user_id:
       )
     }
 
+    // Get the current session
+    const session = await getServerSession(authConfig)
+    
+    // If no session, return unauthorized
+    if (!session) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      )
+    }
+
     console.log(`Fetching courses for user ID: ${userId}`)
+    console.log(`Current session user email: ${session.user?.email}`)
 
     // First, verify the user exists
     const user = await prisma.user.findUnique({
@@ -26,6 +40,16 @@ export async function GET(request: NextRequest, { params }: { params: { user_id:
       return NextResponse.json(
         { error: "User not found" },
         { status: 404 }
+      )
+    }
+
+    // Verify that the requested user_id matches the current session user
+    // This ensures users can only access their own courses
+    if (user.email !== session.user?.email) {
+      console.log(`Access denied: User ${session.user?.email} attempted to access courses for ${user.email}`)
+      return NextResponse.json(
+        { error: "Access denied" },
+        { status: 403 }
       )
     }
 

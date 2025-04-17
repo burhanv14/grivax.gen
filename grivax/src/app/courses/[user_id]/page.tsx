@@ -32,6 +32,15 @@ export default async function CoursesPage({ params }: { params: { user_id: strin
       
       if (dbUser) {
         console.log(`Found user in database: ${dbUser.email} with ID: ${dbUser.user_id}`)
+        
+        // Verify that the requested user_id matches the current session user
+        // This ensures users can only access their own courses
+        if (dbUser.user_id !== params.user_id) {
+          console.log(`User ${dbUser.email} attempted to access courses for user ID: ${params.user_id}`)
+          // Redirect to the correct user's courses page
+          redirect(`/courses/${dbUser.user_id}`)
+        }
+        
         userId = dbUser.user_id
       } else {
         // If not found in database, try the API endpoint
@@ -53,6 +62,14 @@ export default async function CoursesPage({ params }: { params: { user_id: strin
           const apiUser = await response.json()
           if (apiUser && apiUser.user_id) {
             console.log(`Found user from API: ${apiUser.user_id}`)
+            
+            // Verify that the requested user_id matches the current session user
+            if (apiUser.user_id !== params.user_id) {
+              console.log(`User ${session.user.email} attempted to access courses for user ID: ${params.user_id}`)
+              // Redirect to the correct user's courses page
+              redirect(`/courses/${apiUser.user_id}`)
+            }
+            
             userId = apiUser.user_id
           }
         }

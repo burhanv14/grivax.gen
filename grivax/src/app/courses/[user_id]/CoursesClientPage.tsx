@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { Plus } from "lucide-react"
+import { Plus, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { motion } from "framer-motion"
@@ -37,6 +37,7 @@ export default function CoursesClientPage({ params }: { params: { user_id: strin
   const [userCourses, setUserCourses] = useState<Course[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [refreshKey, setRefreshKey] = useState(0)
 
   // Function to fetch courses with retry mechanism
   const fetchCourses = async (user_id: string, retryCount = 0): Promise<Course[]> => {
@@ -46,13 +47,27 @@ export default function CoursesClientPage({ params }: { params: { user_id: strin
       console.log(`Attempting to fetch courses for user ID: ${user_id}`)
       
       // Try the primary API endpoint first
-      let coursesResponse = await fetch(`/api/courses/${user_id}`)
+      let coursesResponse = await fetch(`/api/courses/${user_id}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+        }
+      })
       console.log(`Primary API response status: ${coursesResponse.status}`)
 
       // If the primary endpoint fails, try the alternative endpoint
       if (!coursesResponse.ok) {
         console.log("Primary API endpoint failed, trying alternative endpoint...")
-        coursesResponse = await fetch(`/api/courses?userId=${user_id}`)
+        coursesResponse = await fetch(`/api/courses?userId=${user_id}`, {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
+          }
+        })
         console.log(`Alternative API response status: ${coursesResponse.status}`)
 
         if (!coursesResponse.ok) {
@@ -87,6 +102,11 @@ export default function CoursesClientPage({ params }: { params: { user_id: strin
     }
   }
 
+  // Function to refresh courses
+  const refreshCourses = () => {
+    setRefreshKey(prev => prev + 1)
+  }
+
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true)
@@ -114,7 +134,7 @@ export default function CoursesClientPage({ params }: { params: { user_id: strin
     }
 
     fetchData()
-  }, [params.user_id])
+  }, [params.user_id, refreshKey])
 
   // Debug: Log courses when they change
   useEffect(() => {
@@ -260,6 +280,15 @@ export default function CoursesClientPage({ params }: { params: { user_id: strin
             <span className="text-md text-muted-foreground">
               {userCourses.length} course{userCourses.length !== 1 ? "s" : ""}
             </span>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={refreshCourses}
+              className="ml-2"
+              title="Refresh courses"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </Button>
           </motion.div>
         </div>
 
