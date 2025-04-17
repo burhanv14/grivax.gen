@@ -408,7 +408,7 @@ async function getCourseImage(courseTitle: string) {
       }
     );
 
-    console.log('Generated image search term:', imageSearchTerm.image_search_term);
+    console.log('Generated search term:', imageSearchTerm.image_search_term)
 
     // Use Unsplash API to search for an image related to the course title
     const response = await axios.get(`https://api.unsplash.com/search/photos`, {
@@ -423,17 +423,27 @@ async function getCourseImage(courseTitle: string) {
       timeout: 5000 // 5 second timeout
     })
 
+    // Log API response status
+    console.log('Unsplash API Response:', {
+      status: response.status,
+      resultsCount: response.data?.results?.length || 0
+    })
+
     // Extract the image URL from the response
     if (response.data && response.data.results && response.data.results.length > 0) {
-      return response.data.results[0].urls.regular
+      const image = response.data.results[0]
+      console.log('Selected image:', {
+        id: image.id,
+        description: image.description,
+        alt_description: image.alt_description
+      })
+      return image.urls.regular
     } else {
-      // Return a default image if no results found
       console.warn('No images found for query:', courseTitle)
       return getDefaultImage()
     }
   } catch (error) {
     console.error('Error fetching course image:', error)
-    // Return a default image if there's an error
     return getDefaultImage()
   }
 }
