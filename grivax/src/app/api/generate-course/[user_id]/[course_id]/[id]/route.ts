@@ -129,7 +129,8 @@ export async function POST(
     try {
       course = await prisma.course.findUnique({
         where: {
-          course_id: genCourse.course_id
+          course_id: genCourse.course_id,
+          user_id: genCourse.user_id,
         }
       });
       
@@ -156,17 +157,26 @@ export async function POST(
       );
     }
     
-    // Create a unit with its chapters
-    const unitDetails = {
-      unitNumber: detailedCourseContent.units[0].unitNumber,
-      title: detailedCourseContent.units[0].title,
-      description: detailedCourseContent.units[0].description,
-      chapters: detailedCourseContent.units[0].chapters
-    };
-    
-    // Create the unit and its chapters
-    const createdUnit = await createUnit(course.course_id, unitDetails);
-    console.log('Created unit with chapters:', createdUnit);
+    // Create all units for the course
+    const createdUnits = [];
+    for (const unit of detailedCourseContent.units) {
+      try {
+        const unitDetails = {
+          unitNumber: unit.unitNumber,
+          title: unit.title,
+          description: unit.description,
+          chapters: unit.chapters
+        };
+        
+        console.log(`Creating unit ${unit.unitNumber}: ${unit.title}`);
+        const createdUnit = await createUnit(course.course_id, unitDetails);
+        createdUnits.push(createdUnit);
+        console.log(`Created unit with ID: ${createdUnit.unit_id}`);
+      } catch (unitError) {
+        console.error(`Error creating unit ${unit.unitNumber}:`, unitError);
+        // Continue with other units even if one fails
+      }
+    }
     
     // Return success response
     return NextResponse.json({ 
@@ -176,7 +186,7 @@ export async function POST(
       course_id: params.course_id,
       user_id: params.user_id,
       courseDetails: COURSE_DETAILS,
-      createdUnit: createdUnit
+      createdUnits: createdUnits
     })
   } catch (error) {
     console.error('Error processing acknowledgment:', error)
@@ -328,7 +338,7 @@ async function getCourseImage(courseTitle: string) {
     // Use Unsplash API to search for an image related to the course title
     const response = await axios.get(`https://api.unsplash.com/search/photos`, {
       params: {
-        query: courseTitle,
+        query: `An image of ${courseTitle}`,
         per_page: 1,
         orientation: 'landscape'
       },

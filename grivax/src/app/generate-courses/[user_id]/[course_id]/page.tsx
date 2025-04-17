@@ -410,7 +410,7 @@ export default function CoursePage() {
       
 
       toast.success("Course added to your collection!")
-      router.push("/courses")
+      router.push(`/courses/${params.user_id}`)
     } catch (error) {
       console.error("Error saving course:", error)
       toast.error(error instanceof Error ? error.message : "Failed to save course")

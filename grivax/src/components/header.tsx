@@ -21,6 +21,7 @@ export default function Header() {
   const [isSideMenuOpen, setIsSideMenuOpen] = useState(false)
   const { data: session, status } = useSession()
   const isAuthenticated = status === "authenticated" && session?.user
+  const [userId, setUserId] = useState<string>("")
 
   useEffect(() => {
     const handleScroll = () => {
@@ -37,9 +38,34 @@ export default function Header() {
     setIsSideMenuOpen(false)
   }, [pathname])
 
+  useEffect(() => {
+    // Fetch user ID when authenticated
+    const fetchUserId = async () => {
+      if (isAuthenticated && session?.user?.email) {
+        try {
+          const response = await fetch(`/api/user?email=${encodeURIComponent(session.user.email)}`)
+          if (response.ok) {
+            const data = await response.json()
+            if (data.user_id) {
+              setUserId(data.user_id)
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching user ID:", error)
+        }
+      }
+    }
+
+    fetchUserId()
+  }, [isAuthenticated, session?.user?.email])
+
+  // Define navigation items with dynamic courses link
   const navItems = [
     { name: "Home", href: "/" },
-    { name: "Courses", href: "/courses" },
+    { 
+      name: "Courses", 
+      href: isAuthenticated && userId ? `/courses/${userId}` : "/courses" 
+    },
     { name: "Assessments", href: "/assessments" },
     { name: "Dashboard", href: "/dashboard" },
   ]

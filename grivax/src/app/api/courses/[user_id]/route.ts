@@ -3,11 +3,9 @@ import { PrismaClient } from "@prisma/client"
 
 const prisma = new PrismaClient()
 
-export async function GET(request: NextRequest) {
+export async function GET(request: NextRequest, { params }: { params: { user_id: string } }) {
   try {
-    // Get userId from query parameters
-    const { searchParams } = new URL(request.url)
-    const userId = searchParams.get('userId')
+    const userId = params.user_id;
 
     if (!userId) {
       return NextResponse.json(
@@ -16,7 +14,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    console.log(`Fetching courses for user ID (query param): ${userId}`)
+    console.log(`Fetching courses for user ID: ${userId}`)
 
     // Fetch courses for the specified user
     const courses = await prisma.course.findMany({
@@ -44,4 +42,4 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     )
   }
-} 
+}
