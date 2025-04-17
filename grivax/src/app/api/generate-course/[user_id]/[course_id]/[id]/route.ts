@@ -481,6 +481,32 @@ function getDefaultImage() {
 }
 
 /**
+ * Gets a YouTube video link using the YouTube API
+ */
+async function getYoutubeVideoLink(searchQuery: string) {
+  try {
+    if (!process.env.YOUTUBE_API_KEY) {
+      console.warn('YOUTUBE_API_KEY is not set, using default video');
+      return 'https://www.youtube.com/watch?v=KfVpPpXwXqY';
+    }
+
+    const { data } = await axios.get(
+      `https://www.googleapis.com/youtube/v3/search?key=${process.env.YOUTUBE_API_KEY}&q=${searchQuery}&videoDuration=medium&videoEmbeddable=true&type=video&maxResults=5`
+    );
+
+    if (!data || !data.items?.[0]) {
+      console.log("youtube fail");
+      return 'https://www.youtube.com/watch?v=KfVpPpXwXqY'; // Default educational video
+    }
+
+    return `https://www.youtube.com/watch?v=${data.items[0].id.videoId}`;
+  } catch (error) {
+    console.error('Error fetching YouTube video:', error);
+    return 'https://www.youtube.com/watch?v=KfVpPpXwXqY'; // Default educational video
+  }
+}
+
+/**
  * Creates a chapter with the specified details, generates reading material using Anthropic API,
  * and fetches a YouTube video link using the YouTube API
  * 
@@ -494,7 +520,11 @@ async function createChapter(chapterDetails: {
   learningPoints: string[];
   resources: string[];
   youtubeSearchQuery: string;
-}) {
+}): Promise<{
+  name: string;
+  readingMaterial: string;
+  youtubeVidLink: string;
+}> {
   try {
     console.log('Creating chapter with details:', chapterDetails);
     
@@ -571,43 +601,16 @@ Format your response as a well-structured educational article with headings, sub
   }
 }
 
-/**
- * Gets a YouTube video link using the YouTube API
- */
-async function getYoutubeVideoLink(searchQuery: string) {
-  try {
-    // Check if YouTube API key is available
-    if (!process.env.YOUTUBE_API_KEY) {
-      console.warn('YOUTUBE_API_KEY is not set, using default video link');
-      return 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'; // Default video link
-    }
-
-    // Use YouTube API to search for a video related to the search query
-    const response = await axios.get(`https://www.googleapis.com/youtube/v3/search`, {
-      params: {
-        part: 'snippet',
-        q: searchQuery,
-        maxResults: 1,
-        type: 'video',
-        key: process.env.YOUTUBE_API_KEY
-      },
-      timeout: 5000 // 5 second timeout
-    });
-
-    // Extract the video ID from the response
-    if (response.data && response.data.items && response.data.items.length > 0) {
-      const videoId = response.data.items[0].id.videoId;
-      return `https://www.youtube.com/watch?v=${videoId}`;
-    } else {
-      // Return a default video link if no results found
-      console.warn('No videos found for query:', searchQuery);
-      return 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'; // Default video link
-    }
-  } catch (error) {
-    console.error('Error fetching YouTube video:', error);
-    // Return a default video link if there's an error
-    return 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'; // Default video link
-  }
+// Helper function to parse YouTube duration format (PT1H2M3S)
+function parseDuration(duration: string): number {
+  const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+  if (!match) return 0;
+  
+  const hours = parseInt(match[1] || '0');
+  const minutes = parseInt(match[2] || '0');
+  const seconds = parseInt(match[3] || '0');
+  
+  return hours * 3600 + minutes * 60 + seconds;
 }
 
 /**
