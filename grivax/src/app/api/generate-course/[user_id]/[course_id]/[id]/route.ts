@@ -126,6 +126,15 @@ export async function POST(
     
     // Print the course details to console
     console.log('Generated detailed course:', COURSE_DETAILS)
+    const chapterDetails = {
+      title: detailedCourseContent.units[0].chapters[0].title,
+      description: detailedCourseContent.units[0].chapters[0].description,
+      estimatedTime: detailedCourseContent.units[0].chapters[0].estimatedTime,
+      learningPoints: detailedCourseContent.units[0].chapters[0].learningPoints,
+      resources: detailedCourseContent.units[0].chapters[0].resources,
+      youtubeSearchQuery: detailedCourseContent.units[0].chapters[0].youtubeSearchQuery
+    }
+    console.log('Generated chapter',createChapter(chapterDetails))
     
     // Return success response
     return NextResponse.json({ 
@@ -317,4 +326,134 @@ async function getCourseImage(courseTitle: string) {
 function getDefaultImage() {
   // Return a default image related to education/learning
   return 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1740&q=80'
+}
+
+/**
+ * Creates a chapter with the specified details, generates reading material using Anthropic API,
+ * and fetches a YouTube video link using the YouTube API
+ * 
+ * @param chapterDetails - Object containing chapter details
+ * @returns A chapter object with name, reading material, and YouTube video link
+ */
+async function createChapter(chapterDetails: {
+  title: string;
+  description: string;
+  estimatedTime: string;
+  learningPoints: string[];
+  resources: string[];
+  youtubeSearchQuery: string;
+}) {
+  try {
+    console.log('Creating chapter with details:', chapterDetails);
+    
+    // Generate reading material using Anthropic API
+    const readingMaterial = await generateReadingMaterial(chapterDetails);
+    
+    // Get YouTube video link using the search query
+    const youtubeVideoLink = await getYoutubeVideoLink(chapterDetails.youtubeSearchQuery);
+    
+    // Create the chapter object
+    const chapter = {
+      name: chapterDetails.title,
+      readingMaterial: readingMaterial,
+      youtubeVidLink: youtubeVideoLink
+    };
+    
+    // Print the created chapter to console
+    console.log('Created chapter:', chapter);
+    
+    return chapter;
+  } catch (error) {
+    console.error('Error creating chapter:', error);
+    throw new Error('Failed to create chapter');
+  }
+}
+
+/**
+ * Generates reading material for a chapter using Anthropic API
+ */
+async function generateReadingMaterial(chapterDetails: {
+  title: string;
+  description: string;
+  estimatedTime: string;
+  learningPoints: string[];
+  resources: string[];
+}) {
+  try {
+    // Create a prompt for generating reading material
+    const prompt = `You are an expert educational content creator. I need you to create comprehensive reading material for a chapter with the following details:
+
+Chapter Title: ${chapterDetails.title}
+Chapter Description: ${chapterDetails.description}
+Estimated Time: ${chapterDetails.estimatedTime}
+Learning Points: ${chapterDetails.learningPoints.join(', ')}
+Suggested Resources: ${chapterDetails.resources.join(', ')}
+
+Please create detailed, educational reading material that covers all the learning points. The content should be well-structured, informative, and engaging. Include examples, explanations, and key concepts.
+
+Format your response as a well-structured educational article with headings, subheadings, and paragraphs.`
+
+    // Call Anthropic API to generate the reading material
+    const response = await anthropic.messages.create({
+      model: 'claude-3-haiku-20240307',
+      max_tokens: 4000,
+      messages: [
+        {
+          role: 'user',
+          content: prompt
+        }
+      ]
+    });
+
+    // Extract the response content
+    const content = response.content[0].type === 'text' 
+      ? response.content[0].text 
+      : JSON.stringify(response.content[0]);
+    
+    console.log('Generated reading material for chapter:', chapterDetails.title);
+    
+    return content;
+  } catch (error) {
+    console.error('Error generating reading material:', error);
+    return `Reading material for ${chapterDetails.title} could not be generated. Please refer to the suggested resources for more information.`;
+  }
+}
+
+/**
+ * Gets a YouTube video link using the YouTube API
+ */
+async function getYoutubeVideoLink(searchQuery: string) {
+  try {
+    // Check if YouTube API key is available
+    if (!process.env.YOUTUBE_API_KEY) {
+      console.warn('YOUTUBE_API_KEY is not set, using default video link');
+      return 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'; // Default video link
+    }
+
+    // Use YouTube API to search for a video related to the search query
+    const response = await axios.get(`https://www.googleapis.com/youtube/v3/search`, {
+      params: {
+        part: 'snippet',
+        q: searchQuery,
+        maxResults: 1,
+        type: 'video',
+        key: process.env.YOUTUBE_API_KEY
+      },
+      timeout: 5000 // 5 second timeout
+    });
+
+    // Extract the video ID from the response
+    if (response.data && response.data.items && response.data.items.length > 0) {
+      const videoId = response.data.items[0].id.videoId;
+      return `https://www.youtube.com/watch?v=${videoId}`;
+    } else {
+      // Return a default video link if no results found
+      console.warn('No videos found for query:', searchQuery);
+      return 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'; // Default video link
+    }
+  } catch (error) {
+    console.error('Error fetching YouTube video:', error);
+    // Return a default video link if there's an error
+    return 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'; // Default video link
+  }
 } 
