@@ -45,6 +45,7 @@ export async function GET(request: NextRequest, { params }: { params: { user_id:
     })
 
     console.log(`Found ${courses.length} courses for user ID: ${userId}`)
+    console.log(courses);
     
     // Log the first course (if any) to check its structure
     if (courses.length > 0) {
