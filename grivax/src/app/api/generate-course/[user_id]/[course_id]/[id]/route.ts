@@ -106,7 +106,7 @@ export async function POST(
     // Get course image from Unsplash
     let courseImage;
     try {
-      courseImage = await getCourseImage(genCourse.title)
+      courseImage = await getCourseImage(genCourse.title, genCourse.description)
     } catch (error) {
       console.error('Error getting course image:', error)
       // Use a default image if Unsplash API fails
@@ -391,7 +391,7 @@ async function strict_output(
 /**
  * Gets a relevant image for the course from Unsplash
  */
-async function getCourseImage(courseTitle: string) {
+async function getCourseImage(courseTitle: string, courseDescription: string) {
   try {
     // Check if Unsplash API key is available
     if (!process.env.UNSPLASH_ACCESS_KEY) {
@@ -401,8 +401,8 @@ async function getCourseImage(courseTitle: string) {
 
     // Generate a better image search term using Claude LLM
     const imageSearchTerm = await strict_output(
-      "you are an AI capable of finding the most relevant image for a course",
-      `Please provide a good image search term for the title of a course about ${courseTitle}. This search term will be fed into the unsplash API, so make sure it is a good search term that will return good results`,
+      "you are an AI capable of finding the most relevant, high-quality image for a course",
+      `Please provide me with a good image search term for Unsplash API with the title of the course: ${courseTitle} and the description: ${courseDescription}`,
       {
         image_search_term: "a good search term for the title of the course",
       }
@@ -413,14 +413,16 @@ async function getCourseImage(courseTitle: string) {
     // Use Unsplash API to search for an image related to the course title
     const response = await axios.get(`https://api.unsplash.com/search/photos`, {
       params: {
-        query: imageSearchTerm.image_search_term,
-        per_page: 1,
-        orientation: 'landscape'
+        query: courseTitle,
+        per_page: 10, // Get more results to choose from
+        orientation: 'landscape',
+        content_filter: 'high', // Request high-quality content
+        order_by: 'relevant' // Get the most relevant results first
       },
       headers: {
         Authorization: `Client-ID ${process.env.UNSPLASH_ACCESS_KEY}`
       },
-      timeout: 5000 // 5 second timeout
+      timeout: 8000 // Increased timeout for better reliability
     })
 
     // Log API response status
@@ -431,20 +433,42 @@ async function getCourseImage(courseTitle: string) {
 
     // Extract the image URL from the response
     if (response.data && response.data.results && response.data.results.length > 0) {
-      const image = response.data.results[0]
+      // Try to find the best image from the results
+      const images = response.data.results;
+      
+      // Prefer images with good descriptions and high likes
+      const sortedImages = images.sort((a: any, b: any) => {
+        // Prioritize images with descriptions
+        const aHasDescription = a.description || a.alt_description;
+        const bHasDescription = b.description || b.alt_description;
+        
+        if (aHasDescription && !bHasDescription) return -1;
+        if (!aHasDescription && bHasDescription) return 1;
+        
+        // Then sort by likes
+        return (b.likes || 0) - (a.likes || 0);
+      });
+      
+      const bestImage = sortedImages[0];
+      
       console.log('Selected image:', {
-        id: image.id,
-        description: image.description,
-        alt_description: image.alt_description
-      })
-      return image.urls.regular
+        id: bestImage.id,
+        description: bestImage.description,
+        alt_description: bestImage.alt_description,
+        likes: bestImage.likes,
+        width: bestImage.width,
+        height: bestImage.height
+      });
+      
+      // Use the high-quality version of the image
+      return bestImage.urls.regular;
     } else {
-      console.warn('No images found for query:', courseTitle)
-      return getDefaultImage()
+      console.warn('No images found for query:', imageSearchTerm.image_search_term);
+      return getDefaultImage();
     }
   } catch (error) {
-    console.error('Error fetching course image:', error)
-    return getDefaultImage()
+    console.error('Error fetching course image:', error);
+    return getDefaultImage();
   }
 }
 
