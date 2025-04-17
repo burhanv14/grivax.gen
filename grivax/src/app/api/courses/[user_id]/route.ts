@@ -16,6 +16,21 @@ export async function GET(request: NextRequest, { params }: { params: { user_id:
 
     console.log(`Fetching courses for user ID: ${userId}`)
 
+    // First, verify the user exists
+    const user = await prisma.user.findUnique({
+      where: { user_id: userId }
+    })
+
+    if (!user) {
+      console.log(`User not found with ID: ${userId}`)
+      return NextResponse.json(
+        { error: "User not found" },
+        { status: 404 }
+      )
+    }
+
+    console.log(`Found user: ${user.email}`)
+
     // Fetch courses for the specified user
     const courses = await prisma.course.findMany({
       where: {
@@ -24,6 +39,9 @@ export async function GET(request: NextRequest, { params }: { params: { user_id:
       orderBy: {
         createdAt: "desc",
       },
+      include: {
+        units: true // Include related units
+      }
     })
 
     console.log(`Found ${courses.length} courses for user ID: ${userId}`)

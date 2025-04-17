@@ -9,6 +9,7 @@ const config = {
     "./src/**/*.{ts,tsx}",
     "*.{js,ts,jsx,tsx,mdx}",
   ],
+  prefix: "",
   theme: {
     container: {
       center: true,
@@ -109,14 +110,115 @@ const config = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        // New keyframes for creative card effects
+        shimmer: {
+          from: { backgroundPosition: "0 0" },
+          to: { backgroundPosition: "-200% 0" },
+        },
+        pulse: {
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: "0.5" },
+        },
+        float: {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-10px)" },
+        },
+        glow: {
+          "0%, 100%": { boxShadow: "0 0 5px rgba(var(--primary-rgb), 0.5)" },
+          "50%": { boxShadow: "0 0 20px rgba(var(--primary-rgb), 0.8)" },
+        },
+        tilt: {
+          "0%, 50%, 100%": { transform: "rotate3d(0, 0, 1, 0deg)" },
+          "25%": { transform: "rotate3d(0, 0, 1, 1deg)" },
+          "75%": { transform: "rotate3d(0, 0, 1, -1deg)" },
+        },
+        "gradient-shift": {
+          "0%": { backgroundPosition: "0% 50%" },
+          "50%": { backgroundPosition: "100% 50%" },
+          "100%": { backgroundPosition: "0% 50%" },
+        },
+        "border-flow": {
+          "0%": { backgroundPosition: "0% 0%" },
+          "100%": { backgroundPosition: "100% 100%" },
+        },
+        "particle-float": {
+          "0%": { transform: "translateY(0) translateX(0)", opacity: "0" },
+          "50%": { transform: "translateY(-20px) translateX(10px)", opacity: "1" },
+          "100%": { transform: "translateY(-40px) translateX(0)", opacity: "0" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        // New animations for creative card effects
+        shimmer: "shimmer 2s linear infinite",
+        pulse: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+        float: "float 3s ease-in-out infinite",
+        glow: "glow 2s ease-in-out infinite",
+        tilt: "tilt 10s ease-in-out infinite",
+        "gradient-shift": "gradient-shift 3s ease infinite",
+        "border-flow": "border-flow 3s linear infinite",
+        "particle-float": "particle-float 3s ease-out infinite",
+      },
+      // Add perspective and transform utilities for 3D effects
+      perspective: {
+        none: "none",
+        "500": "500px",
+        "1000": "1000px",
+        "2000": "2000px",
+      },
+      transformStyle: {
+        flat: "flat",
+        "3d": "preserve-3d",
+      },
+      backdropFilter: {
+        none: "none",
+        blur: "blur(4px)",
+        "blur-sm": "blur(8px)",
+        "blur-md": "blur(12px)",
+        "blur-lg": "blur(16px)",
+        "blur-xl": "blur(24px)",
+        "blur-2xl": "blur(40px)",
+        "blur-3xl": "blur(64px)",
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [
+    require("tailwindcss-animate"),
+    // Add plugin function to add the custom utilities
+    ({ addUtilities }: { addUtilities: (utilities: object) => void }) => {
+      const newUtilities = {
+        ".perspective-none": {
+          perspective: "none",
+        },
+        ".perspective-500": {
+          perspective: "500px",
+        },
+        ".perspective-1000": {
+          perspective: "1000px",
+        },
+        ".perspective-2000": {
+          perspective: "2000px",
+        },
+        ".preserve-3d": {
+          transformStyle: "preserve-3d",
+        },
+        ".flat": {
+          transformStyle: "flat",
+        },
+        ".backface-visible": {
+          backfaceVisibility: "visible",
+        },
+        ".backface-hidden": {
+          backfaceVisibility: "hidden",
+        },
+        ".transform-style-3d": {
+          transformStyle: "preserve-3d",
+        },
+      }
+      addUtilities(newUtilities)
+    },
+  ],
 } satisfies Config
 
 export default config

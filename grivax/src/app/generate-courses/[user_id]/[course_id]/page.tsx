@@ -383,7 +383,6 @@ export default function CoursePage() {
       title: courseData.courseStructure.title,
       description: courseData.courseStructure.description,
       modules: courseData.courseStructure.modules,
-      status: "active",
     })
 
     setIsAccepting(true)
@@ -399,7 +398,6 @@ export default function CoursePage() {
           title: courseData.courseStructure.title,
           description: courseData.courseStructure.description,
           modules: courseData.courseStructure.modules,
-          status: "active",
         }),
       })
 
@@ -408,9 +406,41 @@ export default function CoursePage() {
         throw new Error(apiData.error || "Failed to send course data to API")
       }
       
-
-      toast.success("Course added to your collection!")
-      router.push(`/courses/${params.user_id}`)
+      // Show a toast message that the course is being generated
+      toast.info("Course is being generated. This may take a few minutes...")
+      
+      // Poll the status endpoint until the course is fully generated
+      let isGenerated = false;
+      let attempts = 0;
+      const maxAttempts = 30; // Maximum number of attempts (30 * 2 seconds = 60 seconds)
+      
+      while (!isGenerated && attempts < maxAttempts) {
+        // Wait for 2 seconds before checking again
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Check the status endpoint
+        const statusResponse = await fetch(`/api/generate-course/${params.user_id}/${params.course_id}/status`);
+        
+        if (statusResponse.ok) {
+          const statusData = await statusResponse.json();
+          
+          if (statusData.status === 'completed') {
+            isGenerated = true;
+            break;
+          }
+        }
+        
+        attempts++;
+      }
+      
+      if (isGenerated) {
+        toast.success("Course added to your collection!")
+        router.push(`/courses/${params.user_id}`)
+      } else {
+        // If we've reached the maximum number of attempts, still redirect but show a message
+        toast.warning("Course generation is taking longer than expected. You can check its progress in your courses page.")
+        router.push(`/courses/${params.user_id}`)
+      }
     } catch (error) {
       console.error("Error saving course:", error)
       toast.error(error instanceof Error ? error.message : "Failed to save course")

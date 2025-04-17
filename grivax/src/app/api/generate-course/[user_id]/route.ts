@@ -93,17 +93,23 @@ export async function POST(request: Request, { params }: { params: { user_id: st
 
     // Store the course data in the database
     try {
-      const genCourse = await prisma.genCourse.create({
-        data: {
-          user_id: params.user_id,
-          course_id: course_id,
-          title: courseStructure.title,
-          description: courseStructure.description,
-          modules: courseStructure.modules,
-        }
-      })
-      
-      console.log(`Course data stored in database with ID: ${genCourse.id}`)
+      // Use a try-catch block to handle any Prisma errors
+      try {
+        const genCourse = await prisma.genCourse.create({
+          data: {
+            user_id: params.user_id,
+            course_id: course_id,
+            title: courseStructure.title,
+            description: courseStructure.description,
+            modules: courseStructure.modules
+          }
+        });
+        
+        console.log(`Course data stored in database with ID: ${genCourse.id}`);
+      } catch (prismaError: any) {
+        console.error('Prisma error:', prismaError);
+        throw new Error('Failed to store course data in database');
+      }
     } catch (dbError) {
       console.error('Error storing course in database:', dbError)
       throw new Error('Failed to store course in database')

@@ -178,6 +178,30 @@ export async function POST(
       }
     }
     
+    // Send acknowledgment to the status endpoint
+    try {
+      const statusResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/generate-course/${params.user_id}/${params.course_id}/status`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: 'Course generation completed',
+          course_id: params.course_id,
+          user_id: params.user_id
+        }),
+      });
+      
+      if (!statusResponse.ok) {
+        console.error('Failed to send acknowledgment to status endpoint:', await statusResponse.text());
+      } else {
+        console.log('Successfully sent acknowledgment to status endpoint');
+      }
+    } catch (statusError) {
+      console.error('Error sending acknowledgment to status endpoint:', statusError);
+      // Continue with the response even if the acknowledgment fails
+    }
+    
     // Return success response
     return NextResponse.json({ 
       success: true,
@@ -325,6 +349,46 @@ Make sure the content is comprehensive, educational, and aligns with the course 
 }
 
 /**
+ * Helper function to get structured output from Claude LLM
+ */
+async function strict_output(
+  system_prompt: string,
+  user_prompt: string,
+  output_format: Record<string, string>
+) {
+  try {
+    const response = await anthropic.messages.create({
+      model: 'claude-3-haiku-20240307',
+      max_tokens: 1000,
+      messages: [
+        {
+          role: 'user',
+          content: `${system_prompt}\n\n${user_prompt}`
+        }
+      ]
+    });
+
+    // Extract the response content
+    const content = response.content[0].type === 'text' 
+      ? response.content[0].text 
+      : JSON.stringify(response.content[0]);
+    
+    // Parse the JSON response
+    try {
+      return JSON.parse(content);
+    } catch (parseError) {
+      console.error('Error parsing Claude response:', parseError);
+      // Return a default value if parsing fails
+      return { image_search_term: `An image of ${user_prompt.split('about ')[1]}` };
+    }
+  } catch (error) {
+    console.error('Error calling Claude API:', error);
+    // Return a default value if API call fails
+    return { image_search_term: `An image of ${user_prompt.split('about ')[1]}` };
+  }
+}
+
+/**
  * Gets a relevant image for the course from Unsplash
  */
 async function getCourseImage(courseTitle: string) {
@@ -335,10 +399,21 @@ async function getCourseImage(courseTitle: string) {
       return getDefaultImage()
     }
 
+    // Generate a better image search term using Claude LLM
+    const imageSearchTerm = await strict_output(
+      "you are an AI capable of finding the most relevant image for a course",
+      `Please provide a good image search term for the title of a course about ${courseTitle}. This search term will be fed into the unsplash API, so make sure it is a good search term that will return good results`,
+      {
+        image_search_term: "a good search term for the title of the course",
+      }
+    );
+
+    console.log('Generated image search term:', imageSearchTerm.image_search_term);
+
     // Use Unsplash API to search for an image related to the course title
     const response = await axios.get(`https://api.unsplash.com/search/photos`, {
       params: {
-        query: `An image of ${courseTitle}`,
+        query: imageSearchTerm.image_search_term,
         per_page: 1,
         orientation: 'landscape'
       },
