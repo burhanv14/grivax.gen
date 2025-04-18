@@ -448,8 +448,13 @@ const CourseCard = ({ course, userId, index }: { course: Course; userId: string;
                     src={course.image || "/placeholder.svg?height=200&width=300"}
                     alt={course.title}
                     className="h-full w-full object-cover"
+                    crossOrigin="anonymous"
                     style={{
                       filter: isHovered ? "brightness(0.85) contrast(1.1) saturate(1.2)" : "brightness(1) contrast(1)",
+                    }}
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = "/placeholder.svg?height=200&width=300";
                     }}
                     transition={{ duration: 0.4 }}
                   />
