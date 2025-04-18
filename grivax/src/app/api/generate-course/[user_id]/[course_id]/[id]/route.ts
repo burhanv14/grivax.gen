@@ -13,7 +13,6 @@ export async function GET(
   { params }: { params: { user_id: string; course_id: string; id: string } }
 ) {
   try {
-    // Verify that the genCourse exists with the given id, user_id, and course_id
     const genCourse = await prisma.genCourse.findFirst({
       where: {
         id: params.id,
@@ -21,15 +20,9 @@ export async function GET(
         course_id: params.course_id,
       },
     })
-    
     if (!genCourse) {
-      return NextResponse.json(
-        { error: 'Course not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Course not found' }, { status: 404 })
     }
-    
-    console.log('Course found:', genCourse)
     return NextResponse.json({
       message: 'Course found',
       id: genCourse.id,
@@ -38,10 +31,7 @@ export async function GET(
     })
   } catch (error) {
     console.error('Error fetching course:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch course data' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to fetch course data' }, { status: 500 })
   }
 }
 
@@ -51,16 +41,13 @@ export async function POST(
 ) {
   try {
     const data = await request.json()
-    
-    // Log the acknowledgment
     console.log('Acknowledgment received:', {
       id: params.id,
       user_id: params.user_id,
       course_id: params.course_id,
       message: data.message || 'No message provided'
     })
-    
-    // Verify that the genCourse exists with the given id, user_id, and course_id
+
     const genCourse = await prisma.genCourse.findFirst({
       where: {
         id: params.id,
@@ -68,52 +55,42 @@ export async function POST(
         course_id: params.course_id,
       },
     })
-    
     if (!genCourse) {
-      return NextResponse.json(
-        { error: 'Course not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Course not found' }, { status: 404 })
     }
-    
-    // Generate detailed course content using Anthropic
-    let detailedCourseContent;
+
+    let detailedCourseContent
     try {
       detailedCourseContent = await generateDetailedCourse(genCourse)
-    } catch (error) {
-      console.error('Error generating detailed course content:', error)
-      // Create a fallback structure if generation fails
+    } catch (e) {
+      console.error('Error generating detailed course content:', e)
       detailedCourseContent = {
-        units: (genCourse.modules as any[]).map((module, index) => ({
-          unitNumber: index + 1,
+        units: (genCourse.modules as any[]).map((module, idx) => ({
+          unitNumber: idx + 1,
           title: module.title,
-          description: `Unit ${index + 1}: ${module.title}`,
-          chapters: [
-            {
-              chapterNumber: 1,
-              title: `Introduction to ${module.title}`,
-              description: `Introduction to ${module.title}`,
-              estimatedTime: "30 minutes",
-              learningPoints: Array.isArray(module.objectives) ? module.objectives : ["Learning point 1", "Learning point 2"],
-              resources: ["Resource 1", "Resource 2"],
-              youtubeSearchQuery: `${module.title} tutorial`
-            }
-          ]
+          description: `Unit ${idx + 1}: ${module.title}`,
+          chapters: [{
+            chapterNumber: 1,
+            title: `Introduction to ${module.title}`,
+            description: `Introduction to ${module.title}`,
+            estimatedTime: "30 minutes",
+            learningPoints: Array.isArray(module.objectives) ? module.objectives : ["Learning point 1", "Learning point 2"],
+            resources: ["Resource 1", "Resource 2"],
+            youtubeSearchQuery: `${module.title} tutorial`
+          }]
         }))
       }
     }
-    
-    // Get course image from Unsplash
-    let courseImage;
+
+    // **New Google-based image lookup**
+    let courseImage: string
     try {
       courseImage = await getCourseImage(genCourse.title, genCourse.description)
-    } catch (error) {
-      console.error('Error getting course image:', error)
-      // Use a default image if Unsplash API fails
-      courseImage = 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1740&q=80'
+    } catch (e) {
+      console.error('Error getting course image:', e)
+      courseImage = getDefaultImage()
     }
-    
-    // Store everything in constants
+
     const COURSE_DETAILS = {
       id: genCourse.id,
       course_id: genCourse.course_id,
@@ -123,104 +100,70 @@ export async function POST(
       image: courseImage,
       detailedContent: detailedCourseContent
     }
-    
-    // Check if the course exists in the Course table, if not create it
-    let course;
-    try {
-      course = await prisma.course.findUnique({
-        where: {
+
+    // Check/create course record
+    let course = await prisma.course.findUnique({
+      where: {
+        course_id: genCourse.course_id,
+        user_id: genCourse.user_id,
+      }
+    })
+    if (!course) {
+      course = await prisma.course.create({
+        data: {
           course_id: genCourse.course_id,
           user_id: genCourse.user_id,
+          genId: genCourse.id,
+          title: genCourse.title,
+          image: courseImage
         }
-      });
-      
-      if (!course) {
-        console.log(`Course with ID ${genCourse.course_id} not found, creating it...`);
-        course = await prisma.course.create({
-          data: {
-            course_id: genCourse.course_id,
-            user_id: genCourse.user_id,
-            genId: genCourse.id,
-            title: genCourse.title,
-            image: courseImage
-          }
-        });
-        console.log(`Created course with ID: ${course.course_id}`);
-      } else {
-        console.log(`Found existing course with ID: ${course.course_id}`);
-      }
-    } catch (courseError) {
-      console.error('Error checking/creating course:', courseError);
-      return NextResponse.json(
-        { error: 'Failed to check/create course' },
-        { status: 500 }
-      );
+      })
     }
-    
-    // Create all units for the course
-    const createdUnits = [];
+
+    const createdUnits = []
     for (const unit of detailedCourseContent.units) {
       try {
-        const unitDetails = {
+        const createdUnit = await createUnit(course.course_id, {
           unitNumber: unit.unitNumber,
           title: unit.title,
           description: unit.description,
           chapters: unit.chapters
-        };
-        
-        console.log(`Creating unit ${unit.unitNumber}: ${unit.title}`);
-        const createdUnit = await createUnit(course.course_id, unitDetails);
-        createdUnits.push(createdUnit);
-        console.log(`Created unit with ID: ${createdUnit.unit_id}`);
+        })
+        createdUnits.push(createdUnit)
       } catch (unitError) {
-        console.error(`Error creating unit ${unit.unitNumber}:`, unitError);
-        // Continue with other units even if one fails
+        console.error(`Error creating unit ${unit.unitNumber}:`, unitError)
       }
     }
-    
-    // Send acknowledgment to the status endpoint
+
+    // Send status acknowledgment
     try {
-      const statusResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/generate-course/${params.user_id}/${params.course_id}/status`, {
+      await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/generate-course/${params.user_id}/${params.course_id}/status`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: 'Course generation completed',
           course_id: params.course_id,
           user_id: params.user_id
         }),
-      });
-      
-      if (!statusResponse.ok) {
-        console.error('Failed to send acknowledgment to status endpoint:', await statusResponse.text());
-      } else {
-        console.log('Successfully sent acknowledgment to status endpoint');
-      }
+      })
     } catch (statusError) {
-      console.error('Error sending acknowledgment to status endpoint:', statusError);
-      // Continue with the response even if the acknowledgment fails
+      console.error('Error sending acknowledgment to status endpoint:', statusError)
     }
-    
-    // Return success response
-    return NextResponse.json({ 
+
+    return NextResponse.json({
       success: true,
       message: 'Course details generated successfully',
       id: params.id,
       course_id: params.course_id,
       user_id: params.user_id,
       courseDetails: COURSE_DETAILS,
-      createdUnits: createdUnits
+      createdUnits
     })
   } catch (error) {
     console.error('Error processing acknowledgment:', error)
-    return NextResponse.json(
-      { error: 'Failed to process acknowledgment' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to process acknowledgment' }, { status: 500 })
   }
 }
-
 /**
  * Generates detailed course content with units and chapters using Anthropic LLM
  */
@@ -391,93 +334,41 @@ async function strict_output(
 /**
  * Gets a relevant image for the course from Unsplash
  */
-async function getCourseImage(courseTitle: string, courseDescription: string) {
+async function getCourseImage(courseTitle: string, courseDescription: string): Promise<string> {
   try {
-    // Check if Unsplash API key is available
-    if (!process.env.UNSPLASH_ACCESS_KEY) {
-      console.warn('UNSPLASH_ACCESS_KEY is not set, using default image')
+    const apiKey = process.env.GOOGLE_API_KEY
+    const cx = process.env.GOOGLE_CX
+    if (!apiKey || !cx) {
+      console.warn('GOOGLE_API_KEY or GOOGLE_CX is not set, using default image')
       return getDefaultImage()
     }
 
-    // Generate a better image search term using Claude LLM
-    const imageSearchTerm = await strict_output(
-      "you are an AI capable of finding the most relevant, high-quality image for a course",
-      `Please provide me with a good image search term for Unsplash API with the title of the course: ${courseTitle} and the description: ${courseDescription}`,
-      {
-        image_search_term: "a good search term for the title of the course",
-      }
-    );
-
-    console.log('Generated search term:', imageSearchTerm.image_search_term)
-
-    // Use Unsplash API to search for an image related to the course title
-    const response = await axios.get(`https://api.unsplash.com/search/photos`, {
+    const response = await axios.get('https://www.googleapis.com/customsearch/v1', {
       params: {
-        query: courseTitle,
-        per_page: 10, // Get more results to choose from
-        orientation: 'landscape',
-        content_filter: 'high', // Request high-quality content
-        order_by: 'relevant' // Get the most relevant results first
+        key: apiKey,               // Your API key :contentReference[oaicite:5]{index=5}
+        cx: cx,                    // Your search engine ID :contentReference[oaicite:6]{index=6}
+        q: courseTitle,            // Query term
+        searchType: 'image',       // Image-only results :contentReference[oaicite:7]{index=7}
+        num: 1                     // Only the top result :contentReference[oaicite:8]{index=8}
       },
-      headers: {
-        Authorization: `Client-ID ${process.env.UNSPLASH_ACCESS_KEY}`
-      },
-      timeout: 8000 // Increased timeout for better reliability
+      timeout: 8000
     })
 
-    // Log API response status
-    console.log('Unsplash API Response:', {
-      status: response.status,
-      resultsCount: response.data?.results?.length || 0
-    })
-
-    // Extract the image URL from the response
-    if (response.data && response.data.results && response.data.results.length > 0) {
-      // Try to find the best image from the results
-      const images = response.data.results;
-      
-      // Prefer images with good descriptions and high likes
-      const sortedImages = images.sort((a: any, b: any) => {
-        // Prioritize images with descriptions
-        const aHasDescription = a.description || a.alt_description;
-        const bHasDescription = b.description || b.alt_description;
-        
-        if (aHasDescription && !bHasDescription) return -1;
-        if (!aHasDescription && bHasDescription) return 1;
-        
-        // Then sort by likes
-        return (b.likes || 0) - (a.likes || 0);
-      });
-      
-      const bestImage = sortedImages[0];
-      
-      console.log('Selected image:', {
-        id: bestImage.id,
-        description: bestImage.description,
-        alt_description: bestImage.alt_description,
-        likes: bestImage.likes,
-        width: bestImage.width,
-        height: bestImage.height
-      });
-      
-      // Use the high-quality version of the image
-      return bestImage.urls.regular;
-    } else {
-      console.warn('No images found for query:', imageSearchTerm.image_search_term);
-      return getDefaultImage();
+    const items = response.data.items
+    if (Array.isArray(items) && items.length > 0) {
+      return items[0].link
     }
+
+    console.warn('No images found for Google query:', courseTitle)
+    return getDefaultImage()
   } catch (error) {
-    console.error('Error fetching course image:', error);
-    return getDefaultImage();
+    console.error('Error fetching course image from Google:', error)
+    return getDefaultImage()
   }
 }
 
-/**
- * Returns a default image URL
- */
-function getDefaultImage() {
-  // Return a default image related to education/learning
-  return 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1740&q=80'
+function getDefaultImage(): string {
+  return 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1740&q=80'
 }
 
 /**
@@ -573,7 +464,7 @@ Suggested Resources: ${chapterDetails.resources.join(', ')}
 
 Please create detailed, educational reading material that covers all the learning points. The content should be well-structured, informative, and engaging. Include examples, explanations, and key concepts.
 
-Format your response as a well-structured educational article with headings, subheadings, and paragraphs.`
+Format your response as a well-structured educational article with headings, subheadings, and paragraphs. Format it correctly so that it is readable.`
 
     // Call Anthropic API to generate the reading material
     const response = await anthropic.messages.create({
