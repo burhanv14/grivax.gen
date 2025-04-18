@@ -23,6 +23,11 @@ declare module "next-auth" {
 }
 
 export const authConfig: NextAuthOptions = {
+  pages: {
+    signIn: '/login',
+    signOut: '/',
+    error: '/auth/error',
+  },
   providers: [
     CredentialsProvider({
       name: "Sign in",
@@ -64,6 +69,13 @@ export const authConfig: NextAuthOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID as string,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+      authorization: {
+        params: {
+          prompt: "select_account",
+          access_type: "offline",
+          response_type: "code"
+        }
+      }
     }),
     GithubProvider({
       clientId: process.env.GITHUB_CLIENT_ID as string,
@@ -119,7 +131,18 @@ export const authConfig: NextAuthOptions = {
       
       return session;
     },
+    async redirect({ url, baseUrl }) {
+      // Handle redirect after sign in
+      if (url.startsWith("/")) return `${baseUrl}${url}`
+      else if (new URL(url).origin === baseUrl) return url
+      return baseUrl
+    },
   },
+  session: {
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+  },
+  secret: process.env.NEXTAUTH_SECRET,
 };
 
 export async function loginIsRequiredServer() {

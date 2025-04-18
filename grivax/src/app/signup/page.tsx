@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { ArrowLeft, ChevronRight, Github } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { ArrowLeft, ChevronRight, Github, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import PlaceholderImage from "@/components/placeholder-image";
 import ReCaptchaElement from "@/components/ReCaptchaElement";
 import ReCaptchaProvider from "@/components/ReCaptchaProvider";
@@ -29,58 +30,50 @@ export const getUserSession = async (): Promise<SessionUser | null> => {
 
 export default function SignupPage() {
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [isRecaptchaDone, setIsRecaptchaDone] = useState<boolean>(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl") || "/";
 
   const handleClickGoog = async () => {
     try {
-      const result = await signIn("google", { redirect: true });
-      if (result?.ok) {
-        const userInfo = await getUserSession();
-        if (userInfo) {
-          await fetch("/api/signup", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              name: userInfo?.name,
-              email: userInfo?.email,
-              oauthProvider: "google",
-              password: null,
-            }),
-          });
-        }
-        router.push("/");
+      setIsLoading(true);
+      const result = await signIn("google", {
+        callbackUrl,
+        redirect: false,
+      });
+      if (result?.error) {
+        setError("Failed to sign up with Google. Please try again.");
+      } else if (result?.ok) {
+        router.push(callbackUrl);
       }
     } catch (error) {
-      console.error("Google sign-in error:", error);
+      console.error("Google sign-up error:", error);
+      setError("Failed to sign up with Google. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleClickGit = async () => {
     try {
-      const result = await signIn("github", { redirect: false });
-      if (result?.ok) {
-        const userInfo = await getUserSession();
-        if (userInfo) {
-          await fetch("/api/signup", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              name: userInfo?.name,
-              email: userInfo?.email,
-              oauthProvider: "github",
-              password: null,
-            }),
-          });
-        }
-        router.push("/");
+      setIsLoading(true);
+      const result = await signIn("github", {
+        callbackUrl,
+        redirect: false,
+      });
+      if (result?.error) {
+        setError("Failed to sign up with GitHub. Please try again.");
+      } else if (result?.ok) {
+        router.push(callbackUrl);
       }
     } catch (error) {
-      console.error("GitHub sign-in error:", error);
+      console.error("GitHub sign-up error:", error);
+      setError("Failed to sign up with GitHub. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -88,24 +81,35 @@ export default function SignupPage() {
     e.preventDefault();
 
     if (!isRecaptchaDone) {
-      alert("Please complete the Recaptcha Verification");
+      setError("Please complete the reCAPTCHA verification first.");
+      return;
+    }
+
+    if (!acceptedTerms) {
+      setError("Please accept the terms of service and privacy policy.");
       return;
     }
 
     setIsLoading(true);
+    setError(null);
 
-    // Extract form values
     const formData = new FormData(e.currentTarget);
     const firstName = formData.get("first-name") as string;
     const lastName = formData.get("last-name") as string;
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
 
-    // Combine first and last names into one "name" field.
+    // Basic validation
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters long.");
+      setIsLoading(false);
+      return;
+    }
+
+    // Combine first and last names
     const name = `${firstName} ${lastName}`;
 
     try {
-      // Call your API route that creates a new user
       const res = await fetch("/api/signup", {
         method: "POST",
         headers: {
@@ -114,16 +118,33 @@ export default function SignupPage() {
         body: JSON.stringify({ name, email, password })
       });
 
+      const data = await res.json();
+
       if (res.ok) {
-        // If the signup is successful, redirect to the home page
-        router.push("/");
+        // Sign in the user after successful signup
+        const signInResult = await signIn("credentials", {
+          email,
+          password,
+          redirect: false,
+          callbackUrl,
+        });
+
+        if (signInResult?.ok) {
+          router.push(callbackUrl);
+        } else {
+          setError("Account created but failed to sign in. Please try logging in.");
+          router.push("/login");
+        }
       } else {
-        const errorData = await res.json();
-        alert(errorData.error || "Something went wrong");
+        if (data.message === "User already exists") {
+          setError("An account with this email already exists. Please log in instead.");
+        } else {
+          setError(data.error || "Failed to create account. Please try again.");
+        }
       }
     } catch (error) {
       console.error("Signup error:", error);
-      alert("Something went wrong. Please try again.");
+      setError("An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -159,6 +180,13 @@ export default function SignupPage() {
               </p>
             </div>
 
+            {error && (
+              <Alert variant="destructive" className="mb-6">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
             <form onSubmit={handleSubmit} className="mt-6 space-y-4 sm:mt-8 sm:space-y-6">
               <div className="space-y-3 sm:space-y-4">
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
@@ -183,7 +211,12 @@ export default function SignupPage() {
                 </div>
 
                 <div className="flex items-start space-x-2">
-                  <Checkbox id="terms" className="mt-1" />
+                  <Checkbox 
+                    id="terms" 
+                    checked={acceptedTerms}
+                    onCheckedChange={(checked) => setAcceptedTerms(checked as boolean)}
+                    className="mt-1" 
+                  />
                   <Label htmlFor="terms" className="text-xs sm:text-sm font-medium leading-normal">
                     I agree to the{" "}
                     <Link href="/terms" className="text-primary hover:underline">

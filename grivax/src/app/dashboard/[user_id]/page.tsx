@@ -40,6 +40,9 @@ export default async function DashboardPage({
   const courses = await prisma.course.findMany({
     where: {
       user_id: dbUser.user_id,
+      createdAt: {
+        gte: new Date(new Date().setDate(new Date().getDate() - 30)),
+      },
     },
     include: {
       units: {
@@ -52,7 +55,26 @@ export default async function DashboardPage({
       updatedAt: 'desc'
     }
   })
-
+  if(courses.length === 0) {
+    const courses = await prisma.course.findMany({
+      where: {
+        user_id: dbUser.user_id,
+        progress: {
+          not: 100
+        }
+      },
+      include: {
+        units: {
+          include: {
+            chapters: true
+          }
+        }
+      },
+      orderBy: {
+        updatedAt: 'desc'
+      }
+    })
+  }
   // Format courses for the EnrolledCourses component
   const enrolledCourses = courses.map(course => {
     const totalChapters = course.units.reduce((acc, unit) => acc + unit.chapters.length, 0)
