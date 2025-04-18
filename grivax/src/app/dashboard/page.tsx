@@ -141,22 +141,9 @@ export default async function DashboardPage() {
         </Card>
       </div>
 
-      <Tabs defaultValue="courses" className="mt-8">
-        <TabsList>
-          <TabsTrigger value="courses">My Courses</TabsTrigger>
-          <TabsTrigger value="activity">Recent Activity</TabsTrigger>
-          <TabsTrigger value="quizzes">Quiz Results</TabsTrigger>
-        </TabsList>
-        <TabsContent value="courses" className="mt-6">
-          <EnrolledCourses courses={enrolledCourses} />
-        </TabsContent>
-        <TabsContent value="activity" className="mt-6">
-          <RecentActivity />
-        </TabsContent>
-        <TabsContent value="quizzes" className="mt-6">
-          <QuizResults />
-        </TabsContent>
-      </Tabs>
+      <div className="mt-8">
+        <EnrolledCourses courses={enrolledCourses} />
+      </div>
     </div>
   )
 }

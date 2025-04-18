@@ -1,9 +1,13 @@
+"use client"
+
 import Image from "next/image"
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Button } from "@/components/ui/button"
 import { CheckCircle2 } from "lucide-react"
+import { useEffect, useState } from "react"
+import { useSession } from "next-auth/react"
 
 interface EnrolledCourse {
   id: string
@@ -20,12 +24,35 @@ interface EnrolledCoursesProps {
 }
 
 export default function EnrolledCourses({ courses }: EnrolledCoursesProps) {
+  const { data: session } = useSession()
+  const [userId, setUserId] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchUserId = async () => {
+      if (session?.user?.email) {
+        try {
+          const response = await fetch(`/api/user?email=${encodeURIComponent(session.user.email)}`)
+          if (response.ok) {
+            const data = await response.json()
+            if (data.user_id) {
+              setUserId(data.user_id)
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching user ID:", error)
+        }
+      }
+    }
+
+    fetchUserId()
+  }, [session?.user?.email])
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h3 className="text-xl font-semibold">Enrolled Courses</h3>
         <Button variant="outline" size="sm" asChild>
-          <Link href="/courses">Browse More Courses</Link>
+          <Link href={userId ? `/courses/${userId}` : '#'}>Browse More Courses</Link>
         </Button>
       </div>
 
@@ -71,7 +98,7 @@ export default function EnrolledCourses({ courses }: EnrolledCoursesProps) {
                   </div>
                   <div className="mt-3">
                     <Button size="sm" asChild>
-                      <Link href={`/courses/${course.id}`}>
+                      <Link href={userId ? `/courses/${userId}/${course.id}` : '#'}>
                         {course.isCompleted ? 'Review Course' : 'Continue'}
                       </Link>
                     </Button>
