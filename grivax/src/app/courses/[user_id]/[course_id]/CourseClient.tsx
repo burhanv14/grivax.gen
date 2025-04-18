@@ -13,7 +13,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { CourseSidebar } from "@/components/course-sidebar"
+import CourseSidebar from "@/components/course-sidebar"
 import { MarkdownContent } from "@/components/MarkdownContent"
 
 // Define interfaces for the course data structure
@@ -106,6 +106,23 @@ export default function CourseClient({
 
       // Force a re-render with the updated data
       setActiveChapterIndex(activeChapterIndex)
+      
+      // Update the course state to reflect the changes
+      // This ensures the sidebar and other components show the updated completion status
+      const updatedCompletedChapters = updatedCourse.units.reduce((acc, unit) => 
+        acc + unit.chapters.filter(ch => ch.isCompleted).length, 0
+      )
+      const updatedProgressPercentage = Math.round((updatedCompletedChapters / totalChapters) * 100)
+      
+      // Update the course object in the parent component
+      // This is a workaround since we don't have direct access to the parent state
+      // In a real app, you might want to use a state management solution like Redux or Context API
+      window.dispatchEvent(new CustomEvent('courseUpdated', { 
+        detail: { 
+          course: updatedCourse,
+          progressPercentage: updatedProgressPercentage
+        } 
+      }))
     } catch (error) {
       console.error('Error marking chapter as complete:', error)
     } finally {
@@ -151,6 +168,41 @@ export default function CourseClient({
       setIsSidebarOpen(false)
     }
   }
+
+  // Fetch chapter completion status when active chapter changes
+  useEffect(() => {
+    const fetchChapterStatus = async () => {
+      if (!activeChapter) return;
+      
+      try {
+        const response = await fetch(
+          `/api/courses/${userId}/${course.course_id}/${activeUnit.unit_id}/${activeChapter.chapter_id}/status`
+        );
+        
+        if (!response.ok) {
+          console.error('Failed to fetch chapter status');
+          return;
+        }
+        
+        const data = await response.json();
+        
+        // Update the local state to reflect the actual completion status from the database
+        if (data.success && data.isCompleted !== activeChapter.isCompleted) {
+          const updatedCourse = { ...course };
+          const updatedUnit = updatedCourse.units[activeUnitIndex];
+          const updatedChapter = updatedUnit.chapters[activeChapterIndex];
+          updatedChapter.isCompleted = data.isCompleted;
+          
+          // Force a re-render with the updated data
+          setActiveChapterIndex(activeChapterIndex);
+        }
+      } catch (error) {
+        console.error('Error fetching chapter status:', error);
+      }
+    };
+    
+    fetchChapterStatus();
+  }, [activeChapter, activeUnit, activeUnitIndex, activeChapterIndex, course, userId]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -350,8 +402,12 @@ export default function CourseClient({
                     transition={{ delay: 0.3 }}
                   >
                     <Button
-                      variant={activeChapter.isCompleted ? "default" : "outline"}
-                      className="w-full"
+                      variant={activeChapter.isCompleted ? "secondary" : "outline"}
+                      className={`w-full ${
+                        activeChapter.isCompleted 
+                          ? "bg-green-500/10 text-green-500 border-green-500/20 hover:bg-green-500/20" 
+                          : ""
+                      }`}
                       onClick={handleChapterComplete}
                       disabled={isLoading || activeChapter.isCompleted}
                     >

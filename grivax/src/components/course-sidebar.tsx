@@ -16,6 +16,7 @@ interface Chapter {
   youtubeVidLink: string
   readingMaterial: string | null
   unit_id: string
+  isCompleted: boolean
 }
 
 interface Unit {
@@ -43,7 +44,7 @@ interface CourseSidebarProps {
   progressPercentage: number
 }
 
-export function CourseSidebar({
+export default function CourseSidebar({
   course,
   expandedUnits,
   toggleUnit,
@@ -59,6 +60,29 @@ export function CourseSidebar({
   const [lastActiveUnit, setLastActiveUnit] = useState(activeUnitIndex)
   const [lastActiveChapter, setLastActiveChapter] = useState(activeChapterIndex)
   const [expandedUnitsState, setExpandedUnitsState] = useState(expandedUnits)
+  const [localProgressPercentage, setLocalProgressPercentage] = useState(progressPercentage)
+
+  // Listen for course update events
+  useEffect(() => {
+    const handleCourseUpdate = (event: CustomEvent) => {
+      if (event.detail && event.detail.progressPercentage) {
+        setLocalProgressPercentage(event.detail.progressPercentage)
+      }
+    }
+
+    // Add event listener
+    window.addEventListener('courseUpdated', handleCourseUpdate as EventListener)
+
+    // Clean up
+    return () => {
+      window.removeEventListener('courseUpdated', handleCourseUpdate as EventListener)
+    }
+  }, [])
+
+  // Update local progress percentage when prop changes
+  useEffect(() => {
+    setLocalProgressPercentage(progressPercentage)
+  }, [progressPercentage])
 
   // Track changes in active unit/chapter for animations
   useEffect(() => {
@@ -143,16 +167,16 @@ export function CourseSidebar({
           <h2 className="font-semibold">Course Progress</h2>
           <motion.span
             className="text-xs font-medium"
-            key={progressPercentage}
+            key={localProgressPercentage}
             initial={{ scale: 1.2, color: "#10b981" }}
             animate={{ scale: 1, color: "currentColor" }}
             transition={{ duration: 0.4 }}
           >
-            {progressPercentage}%
+            {localProgressPercentage}%
           </motion.span>
         </div>
         <motion.div initial={{ width: 0 }} animate={{ width: "100%" }} transition={{ duration: 0.5, ease: "easeOut" }}>
-          <Progress value={progressPercentage} className="h-2" />
+          <Progress value={localProgressPercentage} className="h-2" />
         </motion.div>
       </motion.div>
 
@@ -358,7 +382,7 @@ export function CourseSidebar({
                                     onMouseEnter={() => setHoveredChapter({ unit: unitIndex, chapter: chapterIndex })}
                                     onMouseLeave={() => setHoveredChapter(null)}
                                   >
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-2 w-full">
                                       <motion.div
                                         className={`h-2 w-2 rounded-full ${
                                           isActive
@@ -381,6 +405,28 @@ export function CourseSidebar({
                                         }}
                                       />
                                       <span className="text-sm truncate">{chapter.name}</span>
+                                      {chapter.isCompleted && (
+                                        <motion.div
+                                          initial={{ opacity: 0, scale: 0 }}
+                                          animate={{ opacity: 1, scale: 1 }}
+                                          className="ml-auto"
+                                        >
+                                          <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            width="16"
+                                            height="16"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            strokeWidth="2"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            className="text-green-500"
+                                          >
+                                            <path d="M20 6L9 17l-5-5" />
+                                          </svg>
+                                        </motion.div>
+                                      )}
                                     </div>
                                   </Button>
                                 </motion.div>
