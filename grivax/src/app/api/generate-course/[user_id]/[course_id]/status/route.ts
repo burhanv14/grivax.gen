@@ -63,11 +63,11 @@ export async function POST(
     const data = await request.json()
     
     // Log the acknowledgment
-    console.log('Course generation completed acknowledgment received:', {
-      user_id: params.user_id,
-      course_id: params.course_id,
-      message: data.message || 'No message provided'
-    })
+    // console.log('Course generation completed acknowledgment received:', {
+    //   user_id: params.user_id,
+    //   course_id: params.course_id,
+    //   message: data.message || 'No message provided'
+    // })
     
     // Verify that the course exists
     const course = await prisma.course.findFirst({

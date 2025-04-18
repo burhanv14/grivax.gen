@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { useEffect, useState, useRef } from "react"
+import Image from "next/image"
 
 // Define the Course type
 interface Course {
@@ -444,118 +445,97 @@ const CourseCard = ({ course, userId, index }: { course: Course; userId: string;
                     damping: 20,
                   }}
                 >
-                  <motion.img
-                    src={course.image || "/placeholder.svg?height=200&width=300"}
-                    alt={course.title}
-                    className="h-full w-full object-cover"
-                    crossOrigin="anonymous"
-                    style={{
-                      filter: isHovered ? "brightness(0.85) contrast(1.1) saturate(1.2)" : "brightness(1) contrast(1)",
-                    }}
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.src = "/placeholder.svg?height=200&width=300";
-                    }}
-                    transition={{ duration: 0.4 }}
-                  />
-                </motion.div>
-
-                {/* Animated overlay with color shift */}
-                <motion.div
-                  className="absolute inset-0"
-                  style={{
-                    background: `linear-gradient(${isHovered ? 225 : 180}deg, 
-                      rgba(var(--primary-rgb), ${isHovered ? 0.7 : 0.5}) 0%, 
-                      transparent 70%, 
-                      rgba(var(--primary-rgb), ${isHovered ? 0.3 : 0.2}) 100%)`,
-                    mixBlendMode: "soft-light",
-                  }}
-                  animate={{
-                    opacity: isHovered ? [0.6, 0.8, 0.6] : 0.5,
-                  }}
-                  transition={{
-                    duration: 3,
-                    repeat: isHovered ? Number.POSITIVE_INFINITY : 0,
-                    ease: "easeInOut",
-                  }}
-                />
-
-                {/* Animated particles */}
-                {isHovered && (
-                  <>
-                    {[...Array(6)].map((_, i) => (
-                      <motion.div
-                        key={i}
-                        className="absolute w-1 h-1 rounded-full bg-white"
-                        initial={{
-                          x: Math.random() * 100 + "%",
-                          y: Math.random() * 100 + "%",
-                          opacity: 0,
-                          scale: 0,
-                        }}
-                        animate={{
-                          y: [null, "-50%"],
-                          opacity: [0, 0.8, 0],
-                          scale: [0, 1.5, 0],
-                        }}
-                        transition={{
-                          duration: 1.5 + Math.random() * 2,
-                          repeat: Number.POSITIVE_INFINITY,
-                          delay: i * 0.2,
-                          ease: "easeOut",
-                        }}
-                      />
-                    ))}
-                  </>
-                )}
-
-                {/* Course title with animated underline */}
-                <motion.div
-                  className="absolute bottom-0 left-0 right-0 p-4 z-20"
-                  animate={{
-                    y: isHovered ? -5 : 0,
-                  }}
-                  transition={{
-                    duration: 0.4,
-                    type: "spring",
-                    stiffness: 300,
-                    damping: 20,
-                  }}
-                >
-                  <h3 className="font-bold text-md text-white drop-shadow-md line-clamp-2 bg-pink-200 text-black dark:text-white  dark:bg-black rounded-lg py-1 px-2">{course.title}</h3>
-                  <motion.div
-                    className="h-0.5 bg-white/70 mt-2 w-0"
-                    animate={{
-                      width: isHovered ? "100%" : "0%",
-                    }}
-                    transition={{ duration: 0.4 }}
-                  />
+                  <div className="relative w-full h-full">
+                    <Image
+                      src={course.image || "/placeholder.svg?height=200&width=300"}
+                      alt={course.title}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      priority={index < 6}
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = "/placeholder.svg?height=200&width=300";
+                      }}
+                      style={{
+                        filter: isHovered ? "brightness(0.85) contrast(1.1) saturate(1.2)" : "brightness(1) contrast(1)",
+                      }}
+                    />
+                  </div>
                 </motion.div>
               </div>
 
-              {/* Floating badge with glow effect
+              {/* Animated overlay with color shift */}
               <motion.div
-                className="absolute -top-2 -right-2 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground text-xs font-medium px-3 py-1 rounded-full shadow-lg z-20"
+                className="absolute inset-0"
+                style={{
+                  background: `linear-gradient(${isHovered ? 225 : 180}deg, 
+                    rgba(var(--primary-rgb), ${isHovered ? 0.7 : 0.5}) 0%, 
+                    transparent 70%, 
+                    rgba(var(--primary-rgb), ${isHovered ? 0.3 : 0.2}) 100%)`,
+                  mixBlendMode: "soft-light",
+                }}
                 animate={{
-                  scale: isHovered ? [1, 1.1, 1] : 1,
-                  rotate: isHovered ? [0, -3, 0] : 0,
-                  y: isHovered ? -3 : 0,
-                  boxShadow: isHovered
-                    ? [
-                        "0 0 0px rgba(var(--primary-rgb), 0.5)",
-                        "0 0 10px rgba(var(--primary-rgb), 0.8)",
-                        "0 0 0px rgba(var(--primary-rgb), 0.5)",
-                      ]
-                    : "0 0 0px rgba(var(--primary-rgb), 0.5)",
+                  opacity: isHovered ? [0.6, 0.8, 0.6] : 0.5,
                 }}
                 transition={{
-                  duration: 2,
+                  duration: 3,
                   repeat: isHovered ? Number.POSITIVE_INFINITY : 0,
                   ease: "easeInOut",
                 }}
+              />
+
+              {/* Animated particles */}
+              {isHovered && (
+                <>
+                  {[...Array(6)].map((_, i) => (
+                    <motion.div
+                      key={i}
+                      className="absolute w-1 h-1 rounded-full bg-white"
+                      initial={{
+                        x: Math.random() * 100 + "%",
+                        y: Math.random() * 100 + "%",
+                        opacity: 0,
+                        scale: 0,
+                      }}
+                      animate={{
+                        y: [null, "-50%"],
+                        opacity: [0, 0.8, 0],
+                        scale: [0, 1.5, 0],
+                      }}
+                      transition={{
+                        duration: 1.5 + Math.random() * 2,
+                        repeat: Number.POSITIVE_INFINITY,
+                        delay: i * 0.2,
+                        ease: "easeOut",
+                      }}
+                    />
+                  ))}
+                </>
+              )}
+
+              {/* Course title with animated underline */}
+              <motion.div
+                className="absolute bottom-0 left-0 right-0 p-4 z-20"
+                animate={{
+                  y: isHovered ? -5 : 0,
+                }}
+                transition={{
+                  duration: 0.4,
+                  type: "spring",
+                  stiffness: 300,
+                  damping: 20,
+                }}
               >
-                AI Course
-              </motion.div> */}
+                <h3 className="font-bold text-md text-white drop-shadow-md line-clamp-2 bg-pink-200 text-black dark:text-white  dark:bg-black rounded-lg py-1 px-2">{course.title}</h3>
+                <motion.div
+                  className="h-0.5 bg-white/70 mt-2 w-0"
+                  animate={{
+                    width: isHovered ? "100%" : "0%",
+                  }}
+                  transition={{ duration: 0.4 }}
+                />
+              </motion.div>
             </div>
 
             {/* Card footer with interactive elements */}

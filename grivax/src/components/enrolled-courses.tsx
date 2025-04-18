@@ -71,8 +71,9 @@ export default function EnrolledCourses({ courses }: EnrolledCoursesProps) {
                     src={course.image || "/placeholder.svg"}
                     alt={course.title}
                     fill
-                    className="object-cover"
+                    className="object-contain"
                     sizes="(max-width: 640px) 100vw, 240px"
+                    priority
                   />
                 </div>
                 <div className="flex flex-1 flex-col justify-between p-6">

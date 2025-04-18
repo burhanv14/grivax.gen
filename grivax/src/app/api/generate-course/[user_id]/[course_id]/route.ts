@@ -46,11 +46,11 @@ export async function POST(
     const data = await request.json()
     
     // Log the received course data
-    console.log('Received course data from frontend:', {
-      user_id: params.user_id,
-      course_id: params.course_id,
-      courseData: data
-    })
+    // console.log('Received course data from frontend:', {
+    //   user_id: params.user_id,
+    //   course_id: params.course_id,
+    //   courseData: data
+    // })
     
     // Update the course data in the database
     const updatedCourse = await prisma.genCourse.update({

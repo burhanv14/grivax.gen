@@ -41,12 +41,12 @@ export async function POST(
 ) {
   try {
     const data = await request.json()
-    console.log('Acknowledgment received:', {
-      id: params.id,
-      user_id: params.user_id,
-      course_id: params.course_id,
-      message: data.message || 'No message provided'
-    })
+    // console.log('Acknowledgment received:', {
+    //   id: params.id,
+    //   user_id: params.user_id,
+    //   course_id: params.course_id,
+    //   message: data.message || 'No message provided'
+    // })
 
     const genCourse = await prisma.genCourse.findFirst({
       where: {
@@ -238,7 +238,7 @@ Make sure the content is comprehensive, educational, and aligns with the course 
       ? response.content[0].text 
       : JSON.stringify(response.content[0])
     
-    console.log('Raw response from Anthropic:', content)
+    // console.log('Raw response from Anthropic:', content)
     
     // Extract JSON from the response - improved regex to handle nested objects
     const jsonMatch = content.match(/\{[\s\S]*\}/)
@@ -417,7 +417,7 @@ async function createChapter(chapterDetails: {
   youtubeVidLink: string;
 }> {
   try {
-    console.log('Creating chapter with details:', chapterDetails);
+    // console.log('Creating chapter with details:', chapterDetails);
     
     // Generate reading material using Anthropic API
     const readingMaterial = await generateReadingMaterial(chapterDetails);
@@ -431,9 +431,6 @@ async function createChapter(chapterDetails: {
       readingMaterial: readingMaterial,
       youtubeVidLink: youtubeVideoLink
     };
-    
-    // Print the created chapter to console
-    console.log('Created chapter:', chapter);
     
     return chapter;
   } catch (error) {
@@ -517,7 +514,7 @@ Make sure to:
       ? response.content[0].text 
       : JSON.stringify(response.content[0]);
     
-    console.log('Generated reading material for chapter:', chapterDetails.title);
+    // console.log('Generated reading material for chapter:', chapterDetails.title);
     
     return content;
   } catch (error) {
@@ -560,7 +557,7 @@ async function createUnit(course_id: string, unitDetails: {
   }>;
 }) {
   try {
-    console.log(`Creating unit ${unitDetails.unitNumber}: ${unitDetails.title}`);
+    // console.log(`Creating unit ${unitDetails.unitNumber}: ${unitDetails.title}`);
     
     // Create the unit in the database
     const unit = await prisma.unit.create({
@@ -570,7 +567,7 @@ async function createUnit(course_id: string, unitDetails: {
       }
     });
     
-    console.log(`Created unit with ID: ${unit.unit_id}`);
+    // console.log(`Created unit with ID: ${unit.unit_id}`);
     
     // Create chapters for the unit
     const createdChapters = [];
@@ -597,7 +594,7 @@ async function createUnit(course_id: string, unitDetails: {
           }
         });
         
-        console.log(`Created chapter with ID: ${chapter.chapter_id}`);
+        // console.log(`Created chapter with ID: ${chapter.chapter_id}`);
         createdChapters.push(chapter);
       } catch (chapterError) {
         console.error(`Error creating chapter ${chapterDetail.chapterNumber}:`, chapterError);
@@ -619,7 +616,7 @@ async function createUnit(course_id: string, unitDetails: {
       throw new Error(`Failed to fetch updated unit with ID: ${unit.unit_id}`);
     }
     
-    console.log(`Fetched unit with ${updatedUnit.chapters.length} chapters`);
+    // console.log(`Fetched unit with ${updatedUnit.chapters.length} chapters`);
     
     // Return the updated unit with its chapters
     return updatedUnit;
