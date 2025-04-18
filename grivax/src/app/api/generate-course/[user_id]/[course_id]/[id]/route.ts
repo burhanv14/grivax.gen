@@ -454,7 +454,7 @@ async function generateReadingMaterial(chapterDetails: {
 }) {
   try {
     // Create a prompt for generating reading material
-    const prompt = `You are an expert educational content creator. I need you to create comprehensive reading material for a chapter with the following details:
+    const prompt = `You are an expert educational content creator. Create comprehensive reading material for a chapter with the following details:
 
 Chapter Title: ${chapterDetails.title}
 Chapter Description: ${chapterDetails.description}
@@ -462,9 +462,43 @@ Estimated Time: ${chapterDetails.estimatedTime}
 Learning Points: ${chapterDetails.learningPoints.join(', ')}
 Suggested Resources: ${chapterDetails.resources.join(', ')}
 
-Please create detailed, educational reading material that covers all the learning points. The content should be well-structured, informative, and engaging. Include examples, explanations, and key concepts.
+Format the content using the following markdown structure:
 
-Format your response as a well-structured educational article with headings, subheadings, and paragraphs. Format it correctly so that it is readable.`
+# ${chapterDetails.title}
+
+## Overview
+${chapterDetails.description}
+
+## Key Learning Points
+${chapterDetails.learningPoints.map(point => `- ${point}`).join('\n')}
+
+## Detailed Content
+[Generate detailed content here, using the following structure for each main point:]
+### [Sub-topic 1]
+- Main point
+  - Supporting detail
+  - Example or explanation
+- Another main point
+  - Supporting detail
+
+### [Sub-topic 2]
+[Continue with the same structure]
+
+## Summary
+[Provide a concise summary of the key points]
+
+## Additional Resources
+${chapterDetails.resources.map(resource => `- ${resource}`).join('\n')}
+
+Make sure to:
+1. Use proper markdown formatting
+2. Include bullet points and sub-points
+3. Add clear section headings
+4. Use bold text (**text**) for important concepts
+5. Use italic text (*text*) for emphasis
+6. Include examples where relevant
+7. Keep paragraphs concise and focused
+8. Use proper spacing between sections`
 
     // Call Anthropic API to generate the reading material
     const response = await anthropic.messages.create({
@@ -488,7 +522,7 @@ Format your response as a well-structured educational article with headings, sub
     return content;
   } catch (error) {
     console.error('Error generating reading material:', error);
-    return `Reading material for ${chapterDetails.title} could not be generated. Please refer to the suggested resources for more information.`;
+    return `# Reading Material Not Available\n\nWe apologize, but the reading material for ${chapterDetails.title} could not be generated at this time. Please refer to the suggested resources for more information.`;
   }
 }
 
