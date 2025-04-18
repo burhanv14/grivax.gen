@@ -30,6 +30,7 @@ model Course {
   genId     String
   title     String
   image     String
+  progress  Int      @default(0)
   units     Unit[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -40,6 +41,7 @@ model Unit {
   unit_id   String    @id @default(cuid())
   course_id String
   name      String
+  progress  Int       @default(0)
   course    Course    @relation(fields: [course_id], references: [course_id])
   chapters  Chapter[]
 
@@ -50,8 +52,9 @@ model Chapter {
   chapter_id         String  @id @default(cuid())
   unit_id            String
   name               String
-  youtubeVidLink      String
+  youtubeVidLink     String
   readingMaterial    String? @db.VarChar(3000000)
+  isCompleted        Boolean @default(false)
   unit               Unit    @relation(fields: [unit_id], references: [unit_id])
 
   @@index([unit_id])

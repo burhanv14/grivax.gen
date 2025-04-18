@@ -3,44 +3,23 @@ import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Button } from "@/components/ui/button"
+import { CheckCircle2 } from "lucide-react"
 
-// Mock data - would be fetched from an API in a real application
-const enrolledCourses = [
-  {
-    id: "1",
-    title: "Machine Learning Fundamentals",
-    image: "/placeholder.svg?height=100&width=150",
-    progress: 75,
-    lastActivity: "2 hours ago",
-    nextLesson: "Types of Neural Networks",
-  },
-  {
-    id: "2",
-    title: "Web Development Bootcamp",
-    image: "/placeholder.svg?height=100&width=150",
-    progress: 92,
-    lastActivity: "Yesterday",
-    nextLesson: "Deploying Your Application",
-  },
-  {
-    id: "3",
-    title: "Data Science with Python",
-    image: "/placeholder.svg?height=100&width=150",
-    progress: 45,
-    lastActivity: "3 days ago",
-    nextLesson: "Data Visualization Techniques",
-  },
-  {
-    id: "4",
-    title: "UI/UX Design Principles",
-    image: "/placeholder.svg?height=100&width=150",
-    progress: 60,
-    lastActivity: "1 week ago",
-    nextLesson: "User Research Methods",
-  },
-]
+interface EnrolledCourse {
+  id: string
+  title: string
+  image: string
+  progress: number
+  lastActivity: string
+  nextLesson: string
+  isCompleted: boolean
+}
 
-export default function EnrolledCourses() {
+interface EnrolledCoursesProps {
+  courses: EnrolledCourse[]
+}
+
+export default function EnrolledCourses({ courses }: EnrolledCoursesProps) {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -51,8 +30,13 @@ export default function EnrolledCourses() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        {enrolledCourses.map((course) => (
-          <Card key={course.id} className="overflow-hidden">
+        {courses.map((course) => (
+          <Card key={course.id} className="overflow-hidden relative">
+            {course.isCompleted && (
+              <div className="absolute right-2 top-2 z-10">
+                <CheckCircle2 className="h-6 w-6 text-primary" />
+              </div>
+            )}
             <CardContent className="p-0">
               <div className="flex flex-col sm:flex-row">
                 <div className="h-32 w-full sm:h-auto sm:w-1/3">
@@ -68,17 +52,28 @@ export default function EnrolledCourses() {
                   <div>
                     <h4 className="mb-1 line-clamp-1 font-medium">{course.title}</h4>
                     <div className="mb-2 flex items-center gap-2">
-                      <Progress value={course.progress} className="h-2 flex-1" />
+                      <Progress 
+                        value={course.progress} 
+                        className={`h-2 flex-1 ${course.isCompleted ? 'bg-primary/20' : ''}`} 
+                      />
                       <span className="text-xs font-medium">{course.progress}%</span>
                     </div>
                     <p className="mb-2 text-xs text-muted-foreground">Last activity: {course.lastActivity}</p>
                     <p className="text-xs">
-                      Next: <span className="font-medium">{course.nextLesson}</span>
+                      {course.isCompleted ? (
+                        <span className="text-primary font-medium">Course Completed!</span>
+                      ) : (
+                        <>
+                          Next: <span className="font-medium">{course.nextLesson}</span>
+                        </>
+                      )}
                     </p>
                   </div>
                   <div className="mt-3">
                     <Button size="sm" asChild>
-                      <Link href={`/courses/${course.id}`}>Continue</Link>
+                      <Link href={`/courses/${course.id}`}>
+                        {course.isCompleted ? 'Review Course' : 'Continue'}
+                      </Link>
                     </Button>
                   </div>
                 </div>

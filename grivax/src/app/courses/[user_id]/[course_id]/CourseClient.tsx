@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useEffect, useState } from "react"
-import { ArrowLeft, BookOpen, ChevronRight, Clock, GraduationCap, Menu, Star } from "lucide-react"
+import { ArrowLeft, BookOpen, ChevronRight, Clock, GraduationCap, Menu, Star, CheckCircle2, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { YouTubePlayer } from "@/components/youtube-player"
@@ -24,6 +24,7 @@ interface Chapter {
   youtubeVidLink: string
   readingMaterial: string | null
   unit_id: string
+  isCompleted: boolean
 }
 
 interface Unit {
@@ -31,6 +32,7 @@ interface Unit {
   name: string
   course_id: string
   chapters: Chapter[]
+  progress: number
 }
 
 interface Course {
@@ -38,6 +40,7 @@ interface Course {
   title: string
   user_id: string
   units: Unit[]
+  progress: number
 }
 
 // This would normally come from your database
@@ -56,17 +59,59 @@ export default function CourseClient({
   const [expandedUnits, setExpandedUnits] = useState([0]) // First unit expanded by default
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const [isMobileView, setIsMobileView] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
   const { scrollYProgress } = useScroll()
   const opacity = useTransform(scrollYProgress, [0, 0.2], [1, 0])
   const scale = useTransform(scrollYProgress, [0, 0.2], [1, 0.8])
 
-  // Mock progress data (in a real app, this would come from the database)
-  const completedChapters = Math.floor(totalChapters * 0.3) // 30% completion for demo
-  const progressPercentage = Math.round((completedChapters / totalChapters) * 100)
-
   // Get active unit and chapter
   const activeUnit = course?.units?.[activeUnitIndex]
   const activeChapter = activeUnit?.chapters?.[activeChapterIndex]
+
+  // Calculate progress
+  const completedChapters = course.units.reduce((acc, unit) => 
+    acc + unit.chapters.filter(ch => ch.isCompleted).length, 0
+  )
+  const progressPercentage = Math.round((completedChapters / totalChapters) * 100)
+
+  // Handle chapter completion
+  const handleChapterComplete = async () => {
+    if (!activeChapter || isLoading) return
+
+    setIsLoading(true)
+    try {
+      const response = await fetch(
+        `/api/courses/${userId}/${course.course_id}/${activeUnit.unit_id}/${activeChapter.chapter_id}/complete`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      )
+
+      if (!response.ok) {
+        throw new Error('Failed to mark chapter as complete')
+      }
+
+      const data = await response.json()
+      
+      // Update the local state to reflect the changes
+      const updatedCourse = { ...course }
+      const updatedUnit = updatedCourse.units[activeUnitIndex]
+      const updatedChapter = updatedUnit.chapters[activeChapterIndex]
+      updatedChapter.isCompleted = true
+      updatedUnit.progress = data.unitProgress
+      updatedCourse.progress = data.courseProgress
+
+      // Force a re-render with the updated data
+      setActiveChapterIndex(activeChapterIndex)
+    } catch (error) {
+      console.error('Error marking chapter as complete:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   // Handle window resize for responsive design
   useEffect(() => {
@@ -298,6 +343,37 @@ export default function CourseClient({
                     </motion.p>
                   </motion.div>
 
+                  {/* Add completion button */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                  >
+                    <Button
+                      variant={activeChapter.isCompleted ? "default" : "outline"}
+                      className="w-full"
+                      onClick={handleChapterComplete}
+                      disabled={isLoading || activeChapter.isCompleted}
+                    >
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Marking as Complete...
+                        </>
+                      ) : activeChapter.isCompleted ? (
+                        <>
+                          <CheckCircle2 className="mr-2 h-4 w-4" />
+                          Chapter Completed
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 className="mr-2 h-4 w-4" />
+                          Mark as Complete
+                        </>
+                      )}
+                    </Button>
+                  </motion.div>
+
                   {/* Video Player */}
                   <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
@@ -349,6 +425,19 @@ export default function CourseClient({
                         <p className="text-muted-foreground">No reading material available for this chapter.</p>
                       )}
                     </motion.div>
+                  </motion.div>
+
+                  {/* Update progress display */}
+                  <motion.div
+                    className="flex items-center gap-4"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 }}
+                  >
+                    <Progress value={progressPercentage} className="h-2 flex-1" />
+                    <span className="text-sm text-muted-foreground">
+                      {progressPercentage}% Complete
+                    </span>
                   </motion.div>
 
                   {/* Navigation Buttons */}
