@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useEffect, useState, useCallback, useMemo } from "react"
+import { useEffect, useState, useCallback, useMemo, useRef } from "react"
 import { useParams, useRouter } from "next/navigation"
 import ReactFlow, {
   type Node,
@@ -156,6 +156,9 @@ export default function CoursePage() {
   const [timeValue, setTimeValue] = useState<number>(0)
   const [nodes, setNodes, onNodesChange] = useNodesState([])
   const [edges, setEdges, onEdgesChange] = useEdgesState([])
+  
+  // Add ref for the module details card
+  const moduleDetailsRef = useRef<HTMLDivElement>(null)
 
   const nodeTypes = useMemo(() => ({ moduleNode: ModuleNode }), [])
   const edgeTypes = useMemo(() => ({ custom: CustomEdge }), [])
@@ -190,6 +193,17 @@ export default function CoursePage() {
             },
           })),
         )
+        
+        // Add a small delay to ensure the module details are rendered before scrolling
+        setTimeout(() => {
+          if (moduleDetailsRef.current) {
+            // Scroll to the module details card
+            window.scrollTo({
+              top: moduleDetailsRef.current.offsetTop - 100, // Offset for better visibility
+              behavior: 'smooth'
+            })
+          }
+        }, 100)
       }
     },
     [courseData, setNodes],
@@ -519,11 +533,13 @@ export default function CoursePage() {
         <AnimatePresence>
           {selectedModule && (
             <motion.div
+              ref={moduleDetailsRef}
               className="lg:col-span-3"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
               transition={{ duration: 0.3 }}
+              id="module-details"
             >
               <Card className="border rounded-lg shadow-md">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
