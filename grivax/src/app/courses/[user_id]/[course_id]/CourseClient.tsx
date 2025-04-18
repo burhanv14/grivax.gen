@@ -14,6 +14,7 @@ import { Separator } from "@/components/ui/separator"
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { CourseSidebar } from "@/components/course-sidebar"
+import { MarkdownContent } from "@/components/MarkdownContent"
 
 // Define interfaces for the course data structure
 interface Chapter {
@@ -317,36 +318,38 @@ export default function CourseClient({
                   </motion.div>
 
                   {/* Reading Material */}
-                  {activeChapter.readingMaterial && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.5, duration: 0.5 }}
-                      whileHover={{
-                        scale: 1.01,
-                        boxShadow: "0 5px 20px rgba(0, 0, 0, 0.08)",
-                      }}
-                      className="p-6 bg-card rounded-lg border shadow-sm transition-all duration-300"
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5, duration: 0.5 }}
+                    whileHover={{
+                      scale: 1.01,
+                      boxShadow: "0 5px 20px rgba(0, 0, 0, 0.08)",
+                    }}
+                    className="p-6 bg-card rounded-lg border shadow-sm transition-all duration-300"
+                  >
+                    <motion.h3
+                      className="text-xl font-semibold mb-4 flex items-center gap-2"
+                      whileHover={{ scale: 1.02, color: "var(--primary)" }}
+                      transition={{ type: "spring", stiffness: 500, damping: 10 }}
                     >
-                      <motion.h3
-                        className="text-xl font-semibold mb-4 flex items-center gap-2"
-                        whileHover={{ scale: 1.02, color: "var(--primary)" }}
-                        transition={{ type: "spring", stiffness: 500, damping: 10 }}
-                      >
-                        <BookOpen className="h-5 w-5 text-primary" />
-                        Reading Material
-                      </motion.h3>
-                      <Separator className="my-4" />
-                      <motion.div
-                        className="prose dark:prose-invert max-w-none"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.6, duration: 0.5 }}
-                      >
-                        <div dangerouslySetInnerHTML={{ __html: activeChapter.readingMaterial }} />
-                      </motion.div>
+                      <BookOpen className="h-5 w-5 text-primary" />
+                      Reading Material
+                    </motion.h3>
+                    <Separator className="my-4" />
+                    <motion.div
+                      className="prose dark:prose-invert max-w-none"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.6, duration: 0.5 }}
+                    >
+                      {activeChapter.readingMaterial ? (
+                        <MarkdownContent content={activeChapter.readingMaterial} />
+                      ) : (
+                        <p className="text-muted-foreground">No reading material available for this chapter.</p>
+                      )}
                     </motion.div>
-                  )}
+                  </motion.div>
 
                   {/* Navigation Buttons */}
                   <motion.div
