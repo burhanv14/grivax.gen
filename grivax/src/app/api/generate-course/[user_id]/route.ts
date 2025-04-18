@@ -13,12 +13,12 @@ export async function POST(request: Request, { params }: { params: { user_id: st
     const data = await request.json()
     
     // Log the received data
-    console.log('Received course generation request:', {
-      user_id: params.user_id,
-      topic: data.topic,
-      difficulty: data.difficulty,
-      pace: data.pace
-    })
+    // console.log('Received course generation request:', {
+    //   user_id: params.user_id,
+    //   topic: data.topic,
+    //   difficulty: data.difficulty,
+    //   pace: data.pace
+    // })
 
     // Format the pace value for the prompt
     const durationInWeeks = parseInt(data.pace) || 4; // Default to 4 weeks if parsing fails
@@ -89,7 +89,7 @@ export async function POST(request: Request, { params }: { params: { user_id: st
     }
 
     // Log the generated course structure
-    console.log('Generated course structure:', courseStructure)
+    // console.log('Generated course structure:', courseStructure)
 
     // Store the course data in the database
     try {

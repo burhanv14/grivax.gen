@@ -27,8 +27,8 @@ export async function GET(request: NextRequest, { params }: { params: { user_id:
       )
     }
 
-    console.log(`Fetching courses for user ID: ${userId}`)
-    console.log(`Current session user email: ${session.user?.email}`)
+    // console.log(`Fetching courses for user ID: ${userId}`)
+    // console.log(`Current session user email: ${session.user?.email}`)
 
     // First, verify the user exists
     const user = await prisma.user.findUnique({
@@ -53,7 +53,7 @@ export async function GET(request: NextRequest, { params }: { params: { user_id:
       )
     }
 
-    console.log(`Found user: ${user.email}`)
+    // console.log(`Found user: ${user.email}`)
 
     // Fetch courses for the specified user
     const courses = await prisma.course.findMany({
@@ -68,13 +68,13 @@ export async function GET(request: NextRequest, { params }: { params: { user_id:
       }
     })
 
-    console.log(`Found ${courses.length} courses for user ID: ${userId}`)
-    console.log(courses);
+    // console.log(`Found ${courses.length} courses for user ID: ${userId}`)
+    // console.log(courses);
     
     // Log the first course (if any) to check its structure
-    if (courses.length > 0) {
-      console.log("Sample course data:", JSON.stringify(courses[0], null, 2))
-    }
+    // if (courses.length > 0) {
+    //   console.log("Sample course data:", JSON.stringify(courses[0], null, 2))
+    // }
 
     // Ensure we're returning an array, even if empty
     return NextResponse.json(Array.isArray(courses) ? courses : [])
