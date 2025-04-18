@@ -60,6 +60,7 @@ export default function CourseClient({
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const [isMobileView, setIsMobileView] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [showConfetti, setShowConfetti] = useState(false)
   const { scrollYProgress } = useScroll()
   const opacity = useTransform(scrollYProgress, [0, 0.2], [1, 0])
   const scale = useTransform(scrollYProgress, [0, 0.2], [1, 0.8])
@@ -73,6 +74,12 @@ export default function CourseClient({
     acc + unit.chapters.filter(ch => ch.isCompleted).length, 0
   )
   const progressPercentage = Math.round((completedChapters / totalChapters) * 100)
+
+  // Show celebration animation
+  const showCelebration = () => {
+    setShowConfetti(true)
+    setTimeout(() => setShowConfetti(false), 3000)
+  }
 
   // Handle chapter completion
   const handleChapterComplete = async () => {
@@ -95,7 +102,7 @@ export default function CourseClient({
       }
 
       const data = await response.json()
-      
+
       // Update the local state to reflect the changes
       const updatedCourse = { ...course }
       const updatedUnit = updatedCourse.units[activeUnitIndex]
@@ -106,20 +113,23 @@ export default function CourseClient({
 
       // Force a re-render with the updated data
       setActiveChapterIndex(activeChapterIndex)
-      
+
       // Update the course state to reflect the changes
       // This ensures the sidebar and other components show the updated completion status
       const updatedCompletedChapters = updatedCourse.units.reduce((acc, unit) => 
         acc + unit.chapters.filter(ch => ch.isCompleted).length, 0
       )
       const updatedProgressPercentage = Math.round((updatedCompletedChapters / totalChapters) * 100)
-      
+
+      // Trigger celebration animation
+      showCelebration()
+
       // Update the course object in the parent component
       // This is a workaround since we don't have direct access to the parent state
       // In a real app, you might want to use a state management solution like Redux or Context API
       window.dispatchEvent(new CustomEvent('courseUpdated', { 
-        detail: { 
-          course: updatedCourse,
+          detail: {
+            course: updatedCourse,
           progressPercentage: updatedProgressPercentage
         } 
       }))
@@ -206,6 +216,63 @@ export default function CourseClient({
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Confetti celebration */}
+      <AnimatePresence>
+        {showConfetti && (
+          <motion.div
+            className="fixed inset-0 pointer-events-none z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            {Array.from({ length: 100 }).map((_, i) => (
+              <motion.div
+                key={i}
+                className="absolute"
+                initial={{
+                  top: "50%",
+                  left: "50%",
+                  scale: 0,
+                  opacity: 1,
+                  rotate: 0,
+                }}
+                animate={{
+                  top: `${Math.random() * 100}%`,
+                  left: `${Math.random() * 100}%`,
+                  scale: Math.random() * 0.8 + 0.2,
+                  opacity: 0,
+                  rotate: Math.random() * 360,
+                  transition: {
+                    duration: 2 + Math.random() * 1,
+                    ease: "easeOut",
+                  },
+                }}
+                style={{
+                  width: `${Math.random() * 10 + 5}px`,
+                  height: `${Math.random() * 10 + 5}px`,
+                  backgroundColor: [
+                    "#FF5733",
+                    "#33FF57",
+                    "#3357FF",
+                    "#F3FF33",
+                    "#FF33F3",
+                    "#33FFF3",
+                    "#33FFF3",
+                    "#FF3333",
+                    "#33FF33",
+                  ][Math.floor(Math.random() * 8)],
+                }}
+              />
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <motion.div
+        className="fixed left-0 right-0 top-0 h-1 bg-primary origin-[0]"
+        style={{ scaleX: scrollYProgress }}
+      />
+
       {/* Top Navigation */}
       <motion.header
         style={{ opacity }}
@@ -237,7 +304,7 @@ export default function CourseClient({
               <GraduationCap className="h-5 w-5 text-primary" />
               <h1 className="text-lg font-semibold tracking-tight truncate max-w-[200px] sm:max-w-md">
                 {course?.title || "Loading..."}
-              </h1>
+        </h1>
             </motion.div>
 
             <div className="flex items-center gap-4">
@@ -347,20 +414,20 @@ export default function CourseClient({
                   </div>
                 </motion.div>
               ) : activeChapter ? (
-                <div className="space-y-8">
+                <div className="space-y-0">
                   <motion.div
-                    className="space-y-2"
+                    className="space-y-0"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5 }}
                   >
                     <div className="flex items-center gap-2 flex-wrap">
-                      <motion.div
+        <motion.div
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         transition={{ type: "spring", stiffness: 400, damping: 17 }}
                       >
-                        <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 shadow-sm">
+                        {/* <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                           Unit {activeUnitIndex + 1}, Chapter {activeChapterIndex + 1}
                         </Badge>
                       </motion.div>
@@ -374,13 +441,13 @@ export default function CourseClient({
                         <Badge variant="outline" className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20">
                           <Star className="h-3 w-3 mr-1" />
                           New
-                        </Badge>
+                        </Badge> */}
                       </motion.div>
                     </div>
-                    <motion.h1
+                    {/* <motion.h1
                       className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/50"
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.2, duration: 0.5, ease: "easeOut" }}
                     >
                       {activeChapter.name}
@@ -389,46 +456,89 @@ export default function CourseClient({
                       className="text-muted-foreground"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      transition={{ delay: 0.3 }}
+          transition={{ delay: 0.3 }}
                     >
                       {activeChapter.description || `Part of ${activeUnit.name}`}
-                    </motion.p>
+                    </motion.p> */}
                   </motion.div>
 
-                  {/* Add completion button */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                  >
-                    <Button
-                      variant={activeChapter.isCompleted ? "secondary" : "outline"}
-                      className={`w-full ${
-                        activeChapter.isCompleted 
-                          ? "bg-green-500/10 text-green-500 border-green-500/20 hover:bg-green-500/20" 
-                          : ""
-                      }`}
-                      onClick={handleChapterComplete}
-                      disabled={isLoading || activeChapter.isCompleted}
-                    >
-                      {isLoading ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Marking as Complete...
-                        </>
-                      ) : activeChapter.isCompleted ? (
-                        <>
-                          <CheckCircle2 className="mr-2 h-4 w-4" />
-                          Chapter Completed
-                        </>
-                      ) : (
-                        <>
-                          <CheckCircle2 className="mr-2 h-4 w-4" />
-                          Mark as Complete
-                        </>
-                      )}
-                    </Button>
-                  </motion.div>
+                  <div className="container pt-20">
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                          Unit {activeUnitIndex + 1}, Chapter {activeChapterIndex + 1}
+                        </Badge>
+                        <Badge variant="outline">
+                          <Clock className="h-3 w-3 mr-1" />
+                          15 mins
+                        </Badge>
+                        <Badge variant="outline" className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20">
+                          <Star className="h-3 w-3 mr-1" />
+                          New
+                        </Badge>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="space-y-1">
+                          <h1 className="text-3xl font-semibold tracking-tight lg:text-4xl bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/50">
+                            {activeChapter?.name}
+                          </h1>
+                          <p className="text-muted-foreground">
+                            Part of {activeUnit?.name}
+                          </p>
+                        </div>
+                        <motion.div 
+                          whileHover={{ scale: 1.02 }} 
+                          whileTap={{ scale: 0.98 }}
+                        >
+            <Button
+              variant={activeChapter.isCompleted ? "secondary" : "default"}
+                            className={`relative overflow-hidden shadow-lg ${
+                activeChapter.isCompleted
+                  ? "bg-green-500/90 text-white hover:bg-green-600/90"
+                  : "bg-gradient-to-r from-primary to-primary/80 text-white hover:from-primary/90 hover:to-primary/70"
+                            } rounded-xl px-6 py-5 font-medium text-base transition-all duration-300`}
+              onClick={handleChapterComplete}
+              disabled={isLoading || activeChapter.isCompleted}
+            >
+              {isLoading ? (
+                              <div className="flex items-center gap-2">
+                                <Loader2 className="h-5 w-5 animate-spin" />
+                                <span>Marking as Complete...</span>
+                              </div>
+              ) : activeChapter.isCompleted ? (
+                              <div className="flex items-center gap-2">
+                                <CheckCircle2 className="h-5 w-5" />
+                                <span>Chapter Completed</span>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                <CheckCircle2 className="h-5 w-5" />
+                                <span>Mark as Complete</span>
+                              </div>
+                            )}
+                            <motion.div
+                              className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0"
+                              initial={{ x: "-100%" }}
+                              animate={{ x: "100%" }}
+                              transition={{
+                                duration: 1.5,
+                                repeat: Infinity,
+                                repeatType: "loop",
+                                ease: "linear",
+                              }}
+                            />
+                          </Button>
+                        </motion.div>
+                      </div>
+                    </div>
+
+                    <div className="h-px bg-border/50 my-8" />
+
+                    <div className="prose dark:prose-invert max-w-none">
+                      <p>{activeChapter?.description}</p>
+                    </div>
+                  </div>
 
                   {/* Video Player */}
                   <motion.div
@@ -558,7 +668,7 @@ export default function CourseClient({
                   <p className="text-muted-foreground mt-2">Please select a chapter to begin learning</p>
                 </div>
               )}
-            </motion.div>
+          </motion.div>
           </AnimatePresence>
         </motion.main>
       </div>
