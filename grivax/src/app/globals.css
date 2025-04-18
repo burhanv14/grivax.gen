@@ -15,6 +15,11 @@
   .preserve-3d {
     transform-style: preserve-3d;
   }
+
+  /* Rotation utilities */
+  .rotate-y-12 {
+    transform: rotateY(12deg);
+  }
 }
 
 @layer base {
@@ -85,4 +90,91 @@
   transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 150ms;
+}
+
+/* Pattern background */
+.pattern-grid-lg {
+  background-image: linear-gradient(to right, rgba(var(--primary-rgb), 0.1) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(var(--primary-rgb), 0.1) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* Animated glow effect */
+.glow-effect {
+  animation: pulse 4s ease-in-out infinite alternate;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0.2;
+  }
+  100% {
+    opacity: 0.4;
+  }
+}
+
+/* Floating particles animation */
+.particle {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: rgba(var(--primary-rgb), 0.5);
+  pointer-events: none;
+}
+
+.particle-1 {
+  top: 20%;
+  left: 10%;
+  animation: float 8s ease-in-out infinite;
+}
+
+.particle-2 {
+  top: 60%;
+  left: 60%;
+  animation: float 12s ease-in-out infinite;
+  animation-delay: -3s;
+}
+
+.particle-3 {
+  top: 40%;
+  left: 80%;
+  animation: float 10s ease-in-out infinite;
+  animation-delay: -6s;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0) translateX(0);
+    opacity: 0;
+  }
+  25% {
+    opacity: 0.8;
+  }
+  50% {
+    transform: translateY(-20px) translateX(10px);
+    opacity: 0.4;
+  }
+  75% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(0) translateX(0);
+    opacity: 0;
+  }
+}
+
+/* Notch path animation */
+.notch-path {
+  animation: glow 3s ease-in-out infinite alternate;
+}
+
+/* Update the notch glow animation to be more subtle */
+@keyframes glow {
+  0% {
+    filter: drop-shadow(0 0 2px rgba(var(--primary-rgb), 0.3));
+  }
+  100% {
+    filter: drop-shadow(0 0 5px rgba(var(--primary-rgb), 0.5));
+  }
 }
