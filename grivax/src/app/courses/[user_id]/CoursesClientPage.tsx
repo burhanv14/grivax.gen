@@ -522,7 +522,7 @@ const CourseCard = ({ course, userId, index }: { course: Course; userId: string;
                     damping: 20,
                   }}
                 >
-                  <h3 className="font-bold text-lg text-white drop-shadow-md line-clamp-2">{course.title}</h3>
+                  <h3 className="font-bold text-md text-white drop-shadow-md line-clamp-2 bg-pink-200 text-black dark:text-white  dark:bg-black rounded-lg py-1 px-2">{course.title}</h3>
                   <motion.div
                     className="h-0.5 bg-white/70 mt-2 w-0"
                     animate={{
