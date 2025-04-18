@@ -387,7 +387,7 @@ export default function CourseClient({
 
         {/* Main Content */}
         <motion.main
-          className="flex-1 h-[calc(100vh-64px)] overflow-y-auto"
+          className="flex-1 h-[calc(100vh-64px)] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.3 }}
@@ -399,7 +399,7 @@ export default function CourseClient({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3 }}
-              className="container py-8 max-w-4xl"
+              className="container py-8 max-w-5xl mx-auto"
             >
               {!course ? (
                 <motion.div
@@ -478,9 +478,9 @@ export default function CourseClient({
                         </Badge>
                       </div>
 
-                      <div className="flex items-center justify-between gap-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div className="space-y-1">
-                          <h1 className="text-3xl font-semibold tracking-tight lg:text-4xl bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/50">
+                          <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/50">
                             {activeChapter?.name}
                           </h1>
                           <p className="text-muted-foreground">
@@ -490,29 +490,30 @@ export default function CourseClient({
                         <motion.div 
                           whileHover={{ scale: 1.02 }} 
                           whileTap={{ scale: 0.98 }}
+                          className="w-full sm:w-auto mt-4 sm:mt-0"
                         >
-            <Button
-              variant={activeChapter.isCompleted ? "secondary" : "default"}
-                            className={`relative overflow-hidden shadow-lg ${
-                activeChapter.isCompleted
-                  ? "bg-green-500/90 text-white hover:bg-green-600/90"
-                  : "bg-gradient-to-r from-primary to-primary/80 text-white hover:from-primary/90 hover:to-primary/70"
-                            } rounded-xl px-6 py-5 font-medium text-base transition-all duration-300`}
-              onClick={handleChapterComplete}
-              disabled={isLoading || activeChapter.isCompleted}
-            >
-              {isLoading ? (
-                              <div className="flex items-center gap-2">
+                          <Button
+                            variant={activeChapter.isCompleted ? "secondary" : "default"}
+                            className={`relative overflow-hidden shadow-lg w-full sm:w-auto ${
+                              activeChapter.isCompleted
+                                ? "bg-green-500/90 text-white hover:bg-green-600/90"
+                                : "bg-gradient-to-r from-primary to-primary/80 text-white hover:from-primary/90 hover:to-primary/70"
+                            } rounded-xl px-4 sm:px-6 py-3 sm:py-5 font-medium text-base transition-all duration-300`}
+                            onClick={handleChapterComplete}
+                            disabled={isLoading || activeChapter.isCompleted}
+                          >
+                            {isLoading ? (
+                              <div className="flex items-center gap-2 justify-center">
                                 <Loader2 className="h-5 w-5 animate-spin" />
                                 <span>Marking as Complete...</span>
                               </div>
-              ) : activeChapter.isCompleted ? (
-                              <div className="flex items-center gap-2">
+                            ) : activeChapter.isCompleted ? (
+                              <div className="flex items-center gap-2 justify-center">
                                 <CheckCircle2 className="h-5 w-5" />
                                 <span>Chapter Completed</span>
                               </div>
                             ) : (
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 justify-center">
                                 <CheckCircle2 className="h-5 w-5" />
                                 <span>Mark as Complete</span>
                               </div>
