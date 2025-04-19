@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="300" height="200" viewBox="0 0 300 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background with subtle gradient -->
+  <defs>
+    <linearGradient id="bg-gradient" x1="0" y1="0" x2="300" y2="200" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#F8FAFC"/>
+      <stop offset="100%" stop-color="#F1F5F9"/>
+    </linearGradient>
+  </defs>
+  <rect width="300" height="200" fill="url(#bg-gradient)" rx="12"/>
+  
+  <!-- Decorative background elements -->
+  <circle cx="40" cy="40" r="60" fill="#6366F1" fill-opacity="0.1"/>
+  <circle cx="260" cy="160" r="50" fill="#8B5CF6" fill-opacity="0.1"/>
+  
+  <!-- Central laptop/device -->
+  <g transform="translate(90, 50)">
+    <!-- Screen -->
+    <rect x="0" y="0" width="120" height="80" rx="6" fill="#4F46E5"/>
+    <rect x="4" y="4" width="112" height="72" rx="4" fill="#FFFFFF"/>
+    <!-- Code lines -->
+    <rect x="12" y="12" width="60" height="4" rx="2" fill="#6366F1" opacity="0.6"/>
+    <rect x="12" y="22" width="40" height="4" rx="2" fill="#8B5CF6" opacity="0.4"/>
+    <rect x="12" y="32" width="50" height="4" rx="2" fill="#6366F1" opacity="0.6"/>
+  </g>
+  
+  <!-- Books and learning elements -->
+  <g transform="translate(40, 100)">
+    <!-- Stack of books -->
+    <rect x="0" y="0" width="50" height="10" rx="2" fill="#6366F1"/>
+    <rect x="-2" y="12" width="54" height="10" rx="2" fill="#8B5CF6"/>
+    <rect x="-4" y="24" width="58" height="10" rx="2" fill="#6366F1"/>
+  </g>
+  
+  <!-- People elements -->
+  <g transform="translate(220, 80)">
+    <!-- Person icon 1 -->
+    <circle cx="0" cy="0" r="15" fill="#6366F1"/>
+    <rect x="-10" y="18" width="20" height="30" rx="10" fill="#6366F1"/>
+  </g>
+  <g transform="translate(260, 90)">
+    <!-- Person icon 2 -->
+    <circle cx="0" cy="0" r="12" fill="#8B5CF6"/>
+    <rect x="-8" y="15" width="16" height="25" rx="8" fill="#8B5CF6"/>
+  </g>
+  
+  <!-- Connection lines -->
+  <path d="M 180 90 C 200 90, 200 110, 220 110" stroke="#6366F1" stroke-width="2" stroke-dasharray="4 4"/>
+  <path d="M 220 130 C 240 140, 240 140, 260 130" stroke="#8B5CF6" stroke-width="2" stroke-dasharray="4 4"/>
+  
+  <!-- Learning symbols -->
+  <g transform="translate(70, 40)">
+    <circle cx="0" cy="0" r="12" fill="#8B5CF6"/>
+    <text x="-6" y="5" fill="white" font-family="Arial" font-size="14" font-weight="bold">+</text>
+  </g>
+  <g transform="translate(240, 40)">
+    <circle cx="0" cy="0" r="12" fill="#6366F1"/>
+    <text x="-6" y="5" fill="white" font-family="Arial" font-size="14" font-weight="bold">✓</text>
+  </g>
+</svg> 

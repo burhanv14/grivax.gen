@@ -10,7 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import PlaceholderImage from "@/components/placeholder-image";
+import Image from "next/image";
 import ReCaptchaElement from "@/components/ReCaptchaElement";
 import ReCaptchaProvider from "@/components/ReCaptchaProvider";
 import { signIn } from "next-auth/react";
@@ -332,27 +332,34 @@ export default function SignupPage() {
 
             <div className="relative z-10 max-w-md p-8 text-center">
               <div className="mb-8 flex justify-center">
-                <PlaceholderImage width={300} height={200} alt="Learning illustration" className="rounded-lg shadow-lg" />
+                <Image
+                  src="/images/learning-illustration.svg"
+                  alt="Learning illustration"
+                  width={300}
+                  height={200}
+                  className="rounded-lg shadow-lg"
+                  priority
+                />
               </div>
               <h2 className="font-poppins text-2xl font-bold">Join Our Learning Community</h2>
               <p className="mt-4 text-muted-foreground">
                 Create your account to access personalized courses, track your progress, and connect with other learners.
               </p>
               <div className="mt-8">
-                <div className="flex items-center justify-center space-x-2">
+                {/* <div className="flex items-center justify-center space-x-2">
                   <div className="h-2 w-2 rounded-full bg-primary"></div>
                   <div className="h-2 w-2 rounded-full bg-primary/60"></div>
                   <div className="h-2 w-2 rounded-full bg-primary/30"></div>
-                </div>
+                </div> */}
               </div>
-              <div className="mt-8 flex items-center justify-center">
+              {/* <div className="mt-8 flex items-center justify-center">
                 <Button variant="outline" className="group" asChild>
                   <Link href="/courses">
                     <span>Browse our courses</span>
                     <ChevronRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                   </Link>
                 </Button>
-              </div>
+              </div> */}
             </div>
           </div>
         </div>

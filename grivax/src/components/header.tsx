@@ -149,7 +149,7 @@ export default function Header() {
                 <span className="font-poppins text-lg font-bold text-primary-foreground relative z-10">G</span>
               </div>
               <span className="font-poppins text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/80 dark:from-primary dark:to-primary/90">
-                Grivax.gen
+                Grivax
               </span>
             </Link>
           </div>
