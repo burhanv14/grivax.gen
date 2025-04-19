@@ -321,7 +321,7 @@ export default function InteractiveCarousel() {
 
     autoplayRef.current = setTimeout(() => {
       handleNext()
-    }, 3000)
+    }, 6000)
 
     return () => {
       if (autoplayRef.current) {
@@ -361,7 +361,7 @@ export default function InteractiveCarousel() {
       </AnimatePresence>
 
       <div className="relative z-10 h-full flex flex-col">
-        {/* Top navigation */}
+        {/* Top navigation - Removed arrow buttons from here */}
         <div className="flex items-center justify-between p-4 md:p-6">
           <div className="flex items-center gap-2">
             <div className={`p-2 rounded-full ${currentItem.accentColor}/10`}>
@@ -369,22 +369,7 @@ export default function InteractiveCarousel() {
             </div>
             <span className={`font-medium ${currentItem.textColor}`}>{currentItem.id.toUpperCase()}</span>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handlePrev}
-              className="p-2 rounded-full bg-background/50 backdrop-blur-sm hover:bg-background/80 transition-colors"
-              aria-label="Previous slide"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            <button
-              onClick={handleNext}
-              className="p-2 rounded-full bg-background/50 backdrop-blur-sm hover:bg-background/80 transition-colors"
-              aria-label="Next slide"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
+          {/* Removed arrow buttons from here */}
         </div>
 
         {/* Content */}
@@ -426,20 +411,41 @@ export default function InteractiveCarousel() {
           </div>
         </div>
 
-        {/* Bottom navigation dots */}
-        <div className="flex justify-center gap-2 p-4">
-          {carouselItems.map((item, index) => (
-            <button
-              key={item.id}
-              onClick={() => handleDotClick(index)}
-              className={`w-2 h-2 rounded-full transition-all ${
-                index === currentIndex
-                  ? `${currentItem.accentColor} scale-125`
-                  : `${currentItem.accentColor}/30 hover:${currentItem.accentColor}/50`
-              }`}
-              aria-label={`Go to slide ${index + 1}`}
-            />
-          ))}
+        {/* Bottom navigation with arrows on either side of dots */}
+        <div className="flex justify-center items-center gap-4 p-4 mb-2">
+          {/* Left arrow button */}
+          <button
+            onClick={handlePrev}
+            className={`transition-transform hover:scale-110 ${currentItem.textColor}`}
+            aria-label="Previous slide"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+
+          {/* Navigation dots */}
+          <div className="flex justify-center gap-2">
+            {carouselItems.map((item, index) => (
+              <button
+                key={item.id}
+                onClick={() => handleDotClick(index)}
+                className={`w-2 h-2 rounded-full transition-all ${
+                  index === currentIndex
+                    ? `${currentItem.accentColor} scale-125`
+                    : `${currentItem.accentColor}/30 hover:${currentItem.accentColor}/50`
+                }`}
+                aria-label={`Go to slide ${index + 1}`}
+              />
+            ))}
+          </div>
+
+          {/* Right arrow button */}
+          <button
+            onClick={handleNext}
+            className={`transition-transform hover:scale-110 ${currentItem.textColor}`}
+            aria-label="Next slide"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
         </div>
       </div>
 
