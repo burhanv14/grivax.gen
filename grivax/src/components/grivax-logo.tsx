@@ -12,20 +12,34 @@ export function GrivaxLogo({ className }: GrivaxLogoProps) {
         <path d="M20 0L37.3205 10V30L20 40L2.67949 30V10L20 0Z" className="fill-primary" />
 
         {/* Inner hexagon cutout */}
-        <path d="M20 8L30.6603 14V26L20 32L9.33975 26V14L20 8Z" className="fill-primary-foreground" />
+        <path 
+          d="M20 8L30.6603 14V26L20 32L9.33975 26V14L20 8Z" 
+          className="fill-primary-foreground"
+          stroke="currentColor"
+          strokeWidth="0.5"
+          strokeOpacity="0.1"
+        />
 
-        {/* G letter */}
+        {/* Clear, recognizable G letter */}
         <path
-          d="M16.5 16C15.1193 16 14 17.1193 14 18.5V21.5C14 22.8807 15.1193 24 16.5 24H23.5C24.8807 24 26 22.8807 26 21.5V20H22V21.5C22 21.7761 21.7761 22 21.5 22H18.5C18.2239 22 18 21.7761 18 21.5V18.5C18 18.2239 18.2239 18 18.5 18H23.5C23.7761 18 24 18.2239 24 18.5V19H26V18.5C26 17.1193 24.8807 16 23.5 16H16.5Z"
+          d="M24 16H16C14.895 16 14 16.895 14 18V22C14 23.105 14.895 24 16 24H22C23.105 24 24 23.105 24 22V20H20V21C20 21.552 19.552 22 19 22H17C16.448 22 16 21.552 16 21V19C16 18.448 16.448 18 17 18H23C23.552 18 24 18.448 24 19V16Z"
+          className="fill-primary"
+        />
+        <path
+          d="M24 19H26V18C26 16.895 25.105 16 24 16V19Z"
           className="fill-primary"
         />
 
         {/* Decorative elements */}
-        <circle cx="10" cy="20" r="2" className="fill-primary-foreground" />
-        <circle cx="30" cy="20" r="2" className="fill-primary-foreground" />
+        <circle cx="12" cy="20" r="2" className="fill-primary-foreground opacity-80" />
+        <circle cx="28" cy="20" r="2" className="fill-primary-foreground opacity-80" />
 
-        {/* Dynamic element */}
-        <path d="M20 4L22 7L20 10L18 7L20 4Z" className="fill-primary-foreground animate-pulse" />
+        {/* Animated accent */}
+        <path 
+          d="M20 4L22.5 8L20 12L17.5 8L20 4Z"
+          className="fill-primary-foreground animate-pulse"
+          style={{ animationDuration: '2s' }}
+        />
       </svg>
     </div>
   )
