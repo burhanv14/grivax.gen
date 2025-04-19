@@ -3,13 +3,13 @@ import { authConfig } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 import { redirect } from "next/navigation"
 
-export default async function DashboardRedirect() {
+export default async function CourseRedirect() {
   try {
     // Check for authenticated session
     const session = await getServerSession(authConfig)
     
     if (!session?.user?.email) {
-      redirect("/login?callbackUrl=" + encodeURIComponent("/dashboard"))
+      redirect("/login?callbackUrl=" + encodeURIComponent("/courses/[user_id]"))
     }
 
     // Find user in database by email
@@ -32,7 +32,7 @@ export default async function DashboardRedirect() {
   } catch (error) {
     // Only log actual errors, not redirect "errors"
     if (!(error as any)?.digest?.startsWith('NEXT_REDIRECT')) {
-      console.error("Unexpected error in dashboard redirect:", error)
+      console.error("Unexpected error in courses redirect:", error)
       redirect("/login?error=ServerError")
     }
     throw error // Re-throw the error to let Next.js handle redirects
