@@ -5,12 +5,11 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { Button } from "../components/ui/button"
-import TestimonialSlider from "../components/testimonial-slider1"
-import Image from "next/image"
+import TestimonialSlider from "../components/testimonial-slider"
+import InteractiveCarousel from "../components/interactive-carousel"
 import { useEffect, useState, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useTheme } from "next-themes"
-import landing_photo from "../../public/landing_photo2.png"
 
 export default function Home() {
   const router = useRouter()
@@ -152,6 +151,8 @@ export default function Home() {
                 </Button>
               </motion.div>
             </motion.div>
+
+            {/* Interactive Carousel - Replacing the static image */}
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -159,64 +160,9 @@ export default function Home() {
               className="relative mt-8 flex items-center justify-center lg:mt-0 perspective-1000"
             >
               <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary/20 to-purple-600/20 blur-3xl animate-pulse" />
-              <motion.div
-                className="relative h-[350px] w-[350px] sm:h-[400px] sm:w-[400px] md:h-[450px] md:w-[450px] lg:h-[500px] lg:w-[500px] preserve-3d"
-                animate={{
-                  rotateY: [0, 10, 0, -10, 0],
-                  rotateX: [0, 10, 0, -10, 0],
-                }}
-                transition={{
-                  repeat: Number.POSITIVE_INFINITY,
-                  duration: 15,
-                  ease: "easeInOut",
-                }}
-                whileHover={{
-                  scale: 1.05,
-                  rotateY: 15,
-                  transition: { duration: 0.5 },
-                }}
-              >
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-primary/30 to-purple-600/30 blur-xl animate-pulse transform -translate-z-10" />
-                <motion.div
-                  className="relative w-full h-full"
-                  animate={{
-                    boxShadow: [
-                      "0px 0px 20px rgba(var(--primary-rgb), 0.3)",
-                      "0px 0px 40px rgba(var(--primary-rgb), 0.5)",
-                      "0px 0px 20px rgba(var(--primary-rgb), 0.3)",
-                    ],
-                  }}
-                  transition={{
-                    repeat: Number.POSITIVE_INFINITY,
-                    duration: 4,
-                    ease: "easeInOut",
-                  }}
-                >
-                  <Image
-                    width={500}
-                    height={500}
-                    src={landing_photo}
-                    alt="Grivax.gen Learning Platform"
-                    className="relative z-10 rounded-2xl object-cover shadow-xl transform transition-all duration-500 hover:scale-105 hover:shadow-2xl"
-                  />
-                  <motion.div
-                    className="absolute inset-0 rounded-2xl border-2 border-primary/20"
-                    animate={{
-                      borderWidth: ["2px", "4px", "2px"],
-                      borderColor: [
-                        "rgba(var(--primary-rgb), 0.2)",
-                        "rgba(var(--primary-rgb), 0.4)",
-                        "rgba(var(--primary-rgb), 0.2)",
-                      ],
-                    }}
-                    transition={{
-                      repeat: Number.POSITIVE_INFINITY,
-                      duration: 4,
-                      ease: "easeInOut",
-                    }}
-                  />
-                </motion.div>
-              </motion.div>
+              <div className="relative h-[350px] w-[350px] sm:h-[400px] sm:w-[400px] md:h-[450px] md:w-[450px] lg:h-[500px] lg:w-[500px]">
+                <InteractiveCarousel />
+              </div>
               <motion.div
                 className="absolute -right-4 -top-4 z-20 rounded-lg bg-background p-3 shadow-lg md:-right-8 md:-top-8"
                 initial={{ x: 50, opacity: 0 }}
