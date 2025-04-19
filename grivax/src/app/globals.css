@@ -178,3 +178,40 @@
     filter: drop-shadow(0 0 5px rgba(var(--primary-rgb), 0.5));
   }
 }
+
+/* Shooting star animations */
+@keyframes shootingStar1 {
+  0% {
+    transform: translateX(0) translateY(0) rotate(45deg);
+    opacity: 0;
+  }
+  5% {
+    opacity: 0.7;
+  }
+  15% {
+    transform: translateX(-200px) translateY(200px) rotate(45deg);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(-200px) translateY(200px) rotate(45deg);
+    opacity: 0;
+  }
+}
+
+@keyframes shootingStar2 {
+  0% {
+    transform: translateX(0) translateY(0) rotate(45deg);
+    opacity: 0;
+  }
+  5% {
+    opacity: 0.7;
+  }
+  15% {
+    transform: translateX(-200px) translateY(200px) rotate(45deg);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(-200px) translateY(200px) rotate(45deg);
+    opacity: 0;
+  }
+}

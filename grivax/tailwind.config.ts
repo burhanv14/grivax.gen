@@ -146,6 +146,33 @@ const config = {
           "50%": { transform: "translateY(-20px) translateX(10px)", opacity: "1" },
           "100%": { transform: "translateY(-40px) translateX(0)", opacity: "0" },
         },
+        // New keyframes for galactic effects
+        twinkle: {
+          "0%": { opacity: "0.5" },
+          "50%": { opacity: "0.8" },
+          "100%": { opacity: "0.5" },
+        },
+        "shootingstar-black": {
+          "0%": {
+            transform: "translateX(0) translateY(0) rotate(45deg)",
+            opacity: "0",
+            width: "0",
+          },
+          "10%": {
+            opacity: "0.7",
+            width: "100px",
+          },
+          "20%": {
+            transform: "translateX(-200px) translateY(200px) rotate(45deg)",
+            opacity: "0",
+            width: "0",
+          },
+          "100%": {
+            transform: "translateX(-200px) translateY(200px) rotate(45deg)",
+            opacity: "0",
+            width: "0",
+          },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -159,6 +186,10 @@ const config = {
         "gradient-shift": "gradient-shift 3s ease infinite",
         "border-flow": "border-flow 3s linear infinite",
         "particle-float": "particle-float 3s ease-out infinite",
+        // New animations for galactic effects
+        twinkle: "twinkle 10s ease-in-out infinite alternate",
+        "shootingstar-1": "shootingstar-black 8s ease-in-out infinite",
+        "shootingstar-2": "shootingstar-black 12s ease-in-out infinite 7s",
       },
       // Add perspective and transform utilities for 3D effects
       perspective: {
@@ -182,9 +213,17 @@ const config = {
         "blur-3xl": "blur(64px)",
       },
       backgroundImage: {
-        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-        'gradient-conic':
-          'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
+        "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
+        "gradient-conic": "conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))",
+        "stars-pattern": `
+          radial-gradient(white, rgba(255, 255, 255, 0.2) 2px, transparent 3px),
+          radial-gradient(white, rgba(255, 255, 255, 0.15) 1px, transparent 2px),
+          radial-gradient(white, rgba(255, 255, 255, 0.1) 2px, transparent 3px)
+        `,
+        "grid-pattern": `
+          linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px)
+        `,
       },
     },
   },
@@ -220,10 +259,28 @@ const config = {
         ".transform-style-3d": {
           transformStyle: "preserve-3d",
         },
+        // Add galactic utilities
+        ".stars-black": {
+          backgroundImage: `
+            radial-gradient(white, rgba(255, 255, 255, 0.2) 2px, transparent 3px),
+            radial-gradient(white, rgba(255, 255, 255, 0.15) 1px, transparent 2px),
+            radial-gradient(white, rgba(255, 255, 255, 0.1) 2px, transparent 3px)
+          `,
+          backgroundSize: "550px 550px, 350px 350px, 250px 250px",
+          backgroundPosition: "0 0, 40px 60px, 130px 270px",
+        },
+        ".shooting-star-1": {
+          animation: "shootingstar-black 8s ease-in-out infinite",
+          animationDelay: "3s",
+        },
+        ".shooting-star-2": {
+          animation: "shootingstar-black 12s ease-in-out infinite",
+          animationDelay: "7s",
+        },
       }
       addUtilities(newUtilities)
     },
-    require('@tailwindcss/typography'),
+    require("@tailwindcss/typography"),
   ],
 } satisfies Config
 

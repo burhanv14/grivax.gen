@@ -321,7 +321,7 @@ export default function InteractiveCarousel() {
 
     autoplayRef.current = setTimeout(() => {
       handleNext()
-    }, 6000)
+    }, 3500)
 
     return () => {
       if (autoplayRef.current) {
