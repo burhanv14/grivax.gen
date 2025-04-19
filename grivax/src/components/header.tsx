@@ -69,8 +69,8 @@ export default function Header() {
       name: "Courses",
       href: isAuthenticated && userId ? `/courses/${userId}` : "/login",
     },
-    { name: "Assessments", href: "/assessments" },
-    { name: "Dashboard", href: `/dashboard/${userId}` },
+    { name: "Assessments", href: isAuthenticated && userId ? `/assessments/${userId}` : "/login" },
+    { name: "Dashboard", href: isAuthenticated && userId ? `/dasboard/${userId}` : "/login" },
   ]
 
   const menuItems = [
@@ -79,7 +79,7 @@ export default function Header() {
       items: [
         {
           name: "Dashboard",
-          href: "/dashboard/${userId}",
+          href: isAuthenticated && userId ? `/dashboard/${userId}` : "/login",
           icon: <User className="h-4 w-4" />,
         },
         {
