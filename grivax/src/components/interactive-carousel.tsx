@@ -388,7 +388,7 @@ export default function InteractiveCarousel() {
               <p className="text-muted-foreground mb-6">{currentItem.description}</p>
               {currentItem.id === "join" && (
                 <Button asChild className="w-fit">
-                  <Link href="/login">Create Account</Link>
+                  <Link href="/signup">Create Account</Link>
                 </Button>
               )}
             </motion.div>
