@@ -1,5 +1,9 @@
+"use client"
+
 import { ArrowRight, BookOpen, Brain, Lightbulb, Sparkles } from "lucide-react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { useSession } from "next-auth/react"
 import { Button } from "../components/ui/button"
 import FeaturedCourses from "../components/featured-courses"
 import TestimonialSlider from "../components/testimonial-slider"
@@ -9,6 +13,21 @@ import landing_photo from"../../public/landing_photo.png"
 import Image from "next/image"
 
 export default function Home() {
+  const router = useRouter();
+  const { data: session, status } = useSession();
+
+  const handleExploreClick = async () => {
+    if (status === "loading") return; // Prevent action while session is loading
+
+    if (session?.user?.id) {
+      // Route to user-specific courses page
+      router.push(`/courses/${session.user.id}`);
+    } else {
+      // Redirect to login if not authenticated
+      router.push('/login?callbackUrl=' + encodeURIComponent('/courses'));
+    }
+  };
+
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
@@ -29,10 +48,8 @@ export default function Home() {
                 </p>
               </div>
               <div className="flex flex-col gap-2 min-[400px]:flex-row">
-                <Button size="lg" asChild>
-                  <Link href="/courses">
-                    Explore Courses <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
+                <Button size="lg" onClick={handleExploreClick}>
+                  Explore Courses <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
                 <Button size="lg" variant="outline" asChild>
                   <Link href="/quizzes">Try a Quiz</Link>
@@ -124,10 +141,8 @@ export default function Home() {
               <h2 className="font-poppins text-3xl font-bold tracking-tight sm:text-4xl">Featured Courses</h2>
               <p className="mt-2 text-muted-foreground">Explore our most popular courses designed to help you excel.</p>
             </div>
-            <Button variant="outline" asChild>
-              <Link href="/courses">
-                View All Courses <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
+            <Button variant="outline" onClick={handleExploreClick}>
+              View All Courses <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </div>
           <FeaturedCourses />
