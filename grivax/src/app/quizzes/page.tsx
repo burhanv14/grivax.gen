@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export const metadata = {
-  title: "Quizzes | Grivax.gen",
+  title: "Quizzes | Grivax",
   description: "Test your knowledge with our dynamic, AI-generated quizzes",
 }
 

@@ -176,7 +176,7 @@ export default function SignupPage() {
                 Create an account
               </h1>
               <p className="text-sm text-muted-foreground sm:text-base">
-                Sign up to get started with Grivax.gen
+                Sign up to get started with Grivax
               </p>
             </div>
 
@@ -316,7 +316,7 @@ export default function SignupPage() {
 
           {/* Footer (optional) */}
           {/* <div className="mt-8 text-center text-xs text-muted-foreground">
-            &copy; {new Date().getFullYear()} Grivax.gen. All rights reserved.
+            &copy; {new Date().getFullYear()} Grivax. All rights reserved.
           </div> */}
         </div>
 

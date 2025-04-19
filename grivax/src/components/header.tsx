@@ -70,7 +70,7 @@ export default function Header() {
       href: isAuthenticated && userId ? `/courses/${userId}` : "/login",
     },
     { name: "Assessments", href: "/assessments" },
-    { name: "Dashboard", href: "/dashboard" },
+    { name: "Dashboard", href: `/dashboard/${userId}` },
   ]
 
   const menuItems = [
@@ -79,7 +79,7 @@ export default function Header() {
       items: [
         {
           name: "Dashboard",
-          href: "/dashboard",
+          href: "/dashboard/${userId}",
           icon: <User className="h-4 w-4" />,
         },
         {

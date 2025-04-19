@@ -6,7 +6,7 @@ import { headers } from "next/headers"
 import prisma from "@/lib/prisma"
 
 export const metadata = {
-  title: "Courses | Grivax.gen",
+  title: "Courses | Grivax",
   description: "Browse our collection of dynamic, AI-generated courses",
 }
 

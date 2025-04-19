@@ -13,21 +13,21 @@ const testimonials = [
     name: "Sarah Johnson",
     role: "Software Engineer",
     content:
-      "Grivax.gen completely transformed my learning experience. The personalized courses and adaptive quizzes helped me master complex topics in half the time it would have taken with traditional methods.",
+      "Grivax completely transformed my learning experience. The personalized courses and adaptive quizzes helped me master complex topics in half the time it would have taken with traditional methods.",
   },
   {
     id: "2",
     name: "Michael Chen",
     role: "Data Scientist",
     content:
-      "As someone who needs to stay current with the latest in data science, Grivax.gen has been invaluable. The platform identifies my knowledge gaps and creates targeted learning paths to address them.",
+      "As someone who needs to stay current with the latest in data science, Grivax has been invaluable. The platform identifies my knowledge gaps and creates targeted learning paths to address them.",
   },
   {
     id: "3",
     name: "Emily Rodriguez",
     role: "UX Designer",
     content:
-      "The interactive nature of Grivax.gen's courses makes learning engaging and effective. I've recommended it to all my colleagues who want to upskill or transition to new roles.",
+      "The interactive nature of Grivax's courses makes learning engaging and effective. I've recommended it to all my colleagues who want to upskill or transition to new roles.",
   },
 ]
 

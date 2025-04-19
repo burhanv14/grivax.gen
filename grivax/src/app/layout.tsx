@@ -22,7 +22,7 @@ const poppins = Poppins({
 })
 
 export const metadata = {
-  title: "Grivax.gen | Dynamic Education Platform",
+  title: "Grivax | Dynamic Education Platform",
   description: "Generate automated, dynamic courses and quizzes for comprehensive exam preparation",
 }
 

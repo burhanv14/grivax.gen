@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: { params: { user_id: string; 
   }
 
   return {
-    title: `${course.title} | Grivax.gen`,
+    title: `${course.title} | Grivax`,
     description: `Learn ${course.title} with our AI-generated course`,
   }
 }

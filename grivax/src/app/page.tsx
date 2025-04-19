@@ -110,7 +110,7 @@ export default function Home() {
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.9, duration: 0.8 }}
                 >
-                  Grivax.gen generates personalized courses and quizzes to help you master any subject with adaptive
+                  Grivax generates personalized courses and quizzes to help you master any subject with adaptive
                   learning technology.
                 </motion.p>
               </div>
@@ -187,7 +187,7 @@ export default function Home() {
             transition={{ duration: 0.8 }}
           >
             <h2 className="font-poppins text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
-              Why Choose Grivax.gen?
+              Why Choose Grivax?
             </h2>
             <p className="mx-auto mt-4 max-w-[700px] text-muted-foreground">
               Our platform combines cutting-edge technology with proven educational methods to deliver a superior
@@ -261,7 +261,7 @@ export default function Home() {
           >
             <h2 className="font-poppins text-3xl font-bold tracking-tight sm:text-4xl">What Our Students Say</h2>
             <p className="mx-auto mt-4 max-w-[700px] text-muted-foreground">
-              Hear from students who have transformed their learning experience with Grivax.gen.
+              Hear from students who have transformed their learning experience with Grivax.
             </p>
           </motion.div>
           <motion.div
@@ -307,7 +307,7 @@ export default function Home() {
             <div className="max-w-md">
               <h2 className="font-poppins text-3xl font-bold tracking-tight">Ready to Transform Your Learning?</h2>
               <p className="mt-4 text-muted-foreground">
-                Join thousands of students who are already experiencing the future of education with Grivax.gen.
+                Join thousands of students who are already experiencing the future of education with Grivax.
               </p>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row">

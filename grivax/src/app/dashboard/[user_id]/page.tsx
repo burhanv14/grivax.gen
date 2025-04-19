@@ -4,10 +4,10 @@ import EnrolledCourses from "@/components/enrolled-courses"
 import { getServerSession } from "next-auth"
 import { authConfig } from "@/lib/auth"
 import prisma from "@/lib/prisma"
-import { notFound } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 
 export const metadata = {
-  title: "Dashboard | Grivax.gen",
+  title: "Dashboard | Grivax",
   description: "Track your learning progress and achievements",
 }
 
@@ -19,7 +19,7 @@ export default async function DashboardPage({
   const session = await getServerSession(authConfig)
   
   if (!session?.user?.email) {
-    notFound()
+    redirect("/login?callbackUrl=" + encodeURIComponent("/dashboard/[user_id]"))
   }
 
   // Find user in database by email
@@ -28,12 +28,12 @@ export default async function DashboardPage({
   })
 
   if (!dbUser) {
-    notFound()
+    redirect("/login?callbackUrl=" + encodeURIComponent("/dashboard/[user_id]"))
   }
 
   // Verify the user is accessing their own dashboard
   if (dbUser.user_id !== params.user_id) {
-    notFound()
+    redirect("/login?callbackUrl=" + encodeURIComponent("/dashboard/[user_id]"))
   }
 
   // Fetch user's courses with progress

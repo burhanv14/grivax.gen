@@ -295,7 +295,7 @@ export default function LoginPage() {
           </div>
 
           {/* <div className="mt-4 text-center text-xs text-muted-foreground sm:mt-8">
-            &copy; {new Date().getFullYear()} Grivax.gen. All rights reserved.
+            &copy; {new Date().getFullYear()} Grivax. All rights reserved.
           </div> */}
         </div>
 
@@ -322,7 +322,7 @@ export default function LoginPage() {
               </div>
               <h2 className="font-poppins text-2xl font-bold">Unlock Your Learning Potential</h2>
               <p className="mt-4 text-muted-foreground">
-                Access personalized courses, adaptive quizzes, and track your progress with Grivax.gen's intelligent
+                Access personalized courses, adaptive quizzes, and track your progress with Grivax's intelligent
                 learning platform.
               </p>
               <div className="mt-8">

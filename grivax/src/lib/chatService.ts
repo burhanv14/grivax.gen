@@ -16,7 +16,7 @@ export async function getAIResponse(
     // Prepare the messages array with system context
     const systemMessage = {
       role: 'system' as const,
-      content: `You are a helpful AI assistant for Grivax.gen, an educational platform. 
+      content: `You are a helpful AI assistant for Grivax, an educational platform. 
       ${pageContext ? `\n\nCurrent page context:\n${pageContext}\n\n` : ''}
       Guidelines:
       1. Provide concise, accurate, and helpful responses

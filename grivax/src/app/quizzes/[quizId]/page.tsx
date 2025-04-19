@@ -11,7 +11,7 @@ export default function QuizPage({ params }: { params: { quizId: string } }) {
     title: "Machine Learning Fundamentals",
     description:
       "Test your knowledge of machine learning fundamentals with this comprehensive quiz. Covers basic concepts, algorithms, and practical applications.",
-    creator: "Grivax.gen AI",
+    creator: "Grivax AI",
     rating: 4.7,
     attempts: 1876,
     duration: "20 minutes",

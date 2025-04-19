@@ -1,7 +1,7 @@
-# Grivax.gen - Dynamic Education Platform
+# Grivax - Dynamic Education Platform
 
 ## 🚀 Project Overview
-**Grivax.gen** is a next-generation education platform designed to generate **automated and dynamic courses and quizzes**. The platform provides a one-stop solution for exam preparation, offering a seamless learning experience with modern UI/UX, multi-language support, and intelligent content generation.
+**Grivax** is a next-generation education platform designed to generate **automated and dynamic courses and quizzes**. The platform provides a one-stop solution for exam preparation, offering a seamless learning experience with modern UI/UX, multi-language support, and intelligent content generation.
 
 ### 🔹 Key Features
 - **Dynamic Content Generation:** AI-driven course and quiz generation.
@@ -37,7 +37,7 @@
 ---
 
 ## 📜 Vision & Future Enhancements
-Grivax.gen aims to revolutionize online learning by automating course and quiz creation. Future versions will include:
+Grivax aims to revolutionize online learning by automating course and quiz creation. Future versions will include:
 - **AI-driven personalized recommendations**
 - **Gamification with rewards and leaderboards**
 - **Voice-assisted learning**

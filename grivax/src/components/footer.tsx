@@ -117,11 +117,11 @@ export default function Footer() {
                 <span className={`font-poppins text-lg font-bold ${isDark ? "text-white" : "text-indigo-700"}`}>G</span>
               </div>
               <span className={`font-poppins text-xl font-bold ${isDark ? "text-white" : "text-zinc-900"}`}>
-                Grivax.gen
+                Grivax
               </span>
             </Link>
             <p className={`mb-6 max-w-xs ${isDark ? "text-zinc-400" : "text-zinc-600"}`}>
-              Grivax.gen is a dynamic education platform that generates personalized courses and quizzes to help you
+              Grivax is a dynamic education platform that generates personalized courses and quizzes to help you
               master any subject.
             </p>
             <div className="flex space-x-5">
@@ -159,7 +159,7 @@ export default function Footer() {
         <div className="mt-12 pt-8 relative">
           <div className={`absolute left-0 right-0 h-px ${isDark ? "bg-zinc-800" : "bg-zinc-200"}`}></div>
           <p className={`text-center text-sm mt-8 ${isDark ? "text-zinc-500" : "text-zinc-500"}`}>
-            &copy; {new Date().getFullYear()} Grivax.gen. All rights reserved.
+            &copy; {new Date().getFullYear()} Grivax. All rights reserved.
           </p>
         </div>
       </div>
