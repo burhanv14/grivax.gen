@@ -1,14 +1,14 @@
 "use client"
 
-import { ArrowRight, BookOpen, Brain, Lightbulb, Sparkles, ChevronUp } from "lucide-react"
+import { ArrowRight, BookOpen, Brain, Lightbulb, Sparkles } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { Button } from "../components/ui/button"
 import TestimonialSlider from "../components/testimonial-slider1"
 import InteractiveCarousel from "../components/interactive-carousel"
-import { useEffect, useState, useRef } from "react"
-import { motion, AnimatePresence } from "framer-motion"
+import { useEffect, useState, useRef, RefObject } from "react"
+import { motion } from "framer-motion"
 import { useTheme } from "next-themes"
 
 export default function Home() {
@@ -16,24 +16,13 @@ export default function Home() {
   const { data: session, status } = useSession()
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
-  const [showScrollTop, setShowScrollTop] = useState(false)
-  const heroRef = useRef(null)
-  const featuresRef = useRef(null)
-  const testimonialsRef = useRef(null)
+  const heroRef = useRef<HTMLElement>(null)
+  const featuresRef = useRef<HTMLElement>(null)
+  const testimonialsRef = useRef<HTMLElement>(null)
 
   // Handle theme mounting to prevent hydration mismatch
   useEffect(() => {
     setMounted(true)
-  }, [])
-
-  // Handle scroll to top button visibility
-  useEffect(() => {
-    const handleScroll = () => {
-      setShowScrollTop(window.scrollY > 500)
-    }
-
-    window.addEventListener("scroll", handleScroll)
-    return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
   const handleExploreClick = async () => {
@@ -48,14 +37,7 @@ export default function Home() {
     }
   }
 
-  const scrollToTop = () => {
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    })
-  }
-
-  const scrollToSection = (ref) => {
+  const scrollToSection = (ref: RefObject<HTMLElement>) => {
     ref.current?.scrollIntoView({ behavior: "smooth" })
   }
 
@@ -66,7 +48,7 @@ export default function Home() {
         {[...Array(15)].map((_, i) => (
           <div
             key={i}
-            className={`absolute rounded-full bg-primary/20 dark:bg-primary/30 animate-particle-float`}
+            className="absolute rounded-full bg-primary/20 dark:bg-primary/30 animate-particle-float"
             style={{
               width: `${Math.random() * 8 + 3}px`,
               height: `${Math.random() * 8 + 3}px`,
@@ -86,7 +68,7 @@ export default function Home() {
       {/* Hero Section */}
       <section
         ref={heroRef}
-        className="relative overflow-hidden bg-gradient-to-b from-background to-muted/50 pt-16 md:pt-24 lg:pt-32 md:pb-14 min-h-[90vh] flex items-center"
+        className="relative overflow-hidden bg-gradient-to-b from-background to-muted/50 pt-16 md:pt-24 lg:pt-16 md:pb-14 min-h-[90vh] flex items-center"
       >
         <Particles />
         <div className="container relative z-10 mx-auto px-4 md:px-6">
@@ -268,7 +250,7 @@ export default function Home() {
 
       {/* Testimonials Section */}
       <section ref={testimonialsRef} className="py-16 md:py-24 relative">
-        <div className="absolute inset-0 pattern-grid-lg opacity-10" />
+        <div className="absolute inset-0 bg-grid-pattern opacity-10" />
         <div className="container mx-auto px-4 md:px-6 relative z-10">
           <motion.div
             className="mb-12 text-center"
@@ -346,7 +328,6 @@ export default function Home() {
           </motion.div>
         </div>
       </section>
-
     </div>
   )
 }
