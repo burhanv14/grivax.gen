@@ -16,23 +16,15 @@ const carouselItems = [
     color: "from-primary/20 to-primary/5",
     accentColor: "bg-primary",
     textColor: "text-primary",
-    visual: (isActive) => (
+    visual: (isActive: boolean) => (
       <div className="relative h-full w-full flex items-center justify-center">
         <motion.div
           className="absolute w-32 h-32 md:w-40 md:h-40 rounded-full bg-primary/20"
-          animate={
-            isActive
-              ? {
-                  scale: [1, 1.2, 1],
-                  opacity: [0.5, 0.8, 0.5],
-                }
-              : { scale: 1, opacity: 0.5 }
-          }
-          transition={{
-            duration: 3,
-            repeat: Number.POSITIVE_INFINITY,
-            repeatType: "reverse",
+          animate={{
+            scale: isActive ? 1 : 0.8,
+            opacity: isActive ? 1 : 0.5,
           }}
+          transition={{ duration: 0.3 }}
         />
         <motion.div
           className="relative z-10 bg-background rounded-xl p-4 shadow-lg border border-primary/20"
@@ -104,7 +96,7 @@ const carouselItems = [
     color: "from-purple-600/20 to-purple-600/5",
     accentColor: "bg-purple-600",
     textColor: "text-purple-600 dark:text-purple-400",
-    visual: (isActive) => (
+    visual: (isActive: boolean) => (
       <div className="relative h-full w-full flex items-center justify-center">
         <motion.div
           className="absolute w-40 h-40 md:w-48 md:h-48 rounded-full bg-purple-600/10 flex items-center justify-center"
@@ -188,7 +180,7 @@ const carouselItems = [
     color: "from-green-500/20 to-green-500/5",
     accentColor: "bg-green-500",
     textColor: "text-green-500",
-    visual: (isActive) => (
+    visual: (isActive: boolean) => (
       <div className="relative h-full w-full flex items-center justify-center">
         <div className="grid grid-cols-2 gap-4 w-full max-w-xs">
           {[
@@ -233,7 +225,7 @@ const carouselItems = [
     color: "from-amber-500/20 to-amber-500/5",
     accentColor: "bg-amber-500",
     textColor: "text-amber-500",
-    visual: (isActive) => (
+    visual: (isActive: boolean) => (
       <div className="relative h-full w-full flex items-center justify-center">
         <motion.div
           className="bg-background rounded-xl p-6 shadow-lg border border-amber-500/20 w-full max-w-xs"
@@ -308,27 +300,27 @@ const carouselItems = [
 
 export default function InteractiveCarousel() {
   const [currentIndex, setCurrentIndex] = useState(0)
-  const [autoplay, setAutoplay] = useState(true)
-  const autoplayRef = useRef(null)
-  const [isHovering, setIsHovering] = useState(false)
+  const [autoPlay, setAutoPlay] = useState(true)
+  const [isHovered, setIsHovered] = useState(false)
+  const autoPlayTimeout = useRef<NodeJS.Timeout | null>(null)
 
   const currentItem = carouselItems[currentIndex]
   const IconComponent = currentItem.icon
 
   // Handle autoplay
   useEffect(() => {
-    if (!autoplay || isHovering) return
+    if (!autoPlay || isHovered) return
 
-    autoplayRef.current = setTimeout(() => {
+    autoPlayTimeout.current = setTimeout(() => {
       handleNext()
     }, 3500)
 
     return () => {
-      if (autoplayRef.current) {
-        clearTimeout(autoplayRef.current)
+      if (autoPlayTimeout.current) {
+        clearTimeout(autoPlayTimeout.current)
       }
     }
-  }, [currentIndex, autoplay, isHovering])
+  }, [currentIndex, autoPlay, isHovered])
 
   const handlePrev = () => {
     setCurrentIndex((prev) => (prev - 1 + carouselItems.length) % carouselItems.length)
@@ -338,15 +330,16 @@ export default function InteractiveCarousel() {
     setCurrentIndex((prev) => (prev + 1) % carouselItems.length)
   }
 
-  const handleDotClick = (index) => {
+  const handleDotClick = (index: number) => {
     setCurrentIndex(index)
+    setAutoPlay(false)
   }
 
   return (
     <div
       className="relative w-full h-full rounded-2xl overflow-hidden border border-primary/10 shadow-xl"
-      onMouseEnter={() => setIsHovering(true)}
-      onMouseLeave={() => setIsHovering(false)}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       {/* Background gradient */}
       <AnimatePresence initial={false} mode="wait">

@@ -1,15 +1,57 @@
 "use client"
 
-import { ArrowRight, BookOpen, Brain, Lightbulb, Sparkles } from "lucide-react"
+import { ArrowRight, BookOpen, Brain, Lightbulb, Sparkles, Star, Award, Heart } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { Button } from "../components/ui/button"
-import TestimonialSlider from "../components/testimonial-slider1"
+import { TestimonialSlider1 } from "../components/testimonial-slider1"
 import InteractiveCarousel from "../components/interactive-carousel"
 import { useEffect, useState, useRef, RefObject } from "react"
 import { motion } from "framer-motion"
 import { useTheme } from "next-themes"
+
+const testimonials = [
+  {
+    id: 1,
+    name: "John Doe",
+    title: "Software Engineer",
+    text: "This platform has transformed my learning experience. The personalized courses are exactly what I needed.",
+    image: "/placeholder.svg",
+    color: "from-primary/20 to-primary/5",
+    rating: 5,
+    icon: Star,
+    iconBg: "bg-amber-500/10",
+    iconColor: "text-amber-500",
+    achievement: "Completed 10 courses",
+  },
+  {
+    id: 2,
+    name: "Jane Smith",
+    title: "Data Scientist",
+    text: "The interactive learning modules are engaging and effective. I've learned more in a month than I did in a year of traditional courses.",
+    image: "/placeholder.svg",
+    color: "from-purple-600/20 to-purple-600/5",
+    rating: 4.5,
+    icon: Award,
+    iconBg: "bg-purple-600/10",
+    iconColor: "text-purple-600 dark:text-purple-400",
+    achievement: "Improved skills by 40%",
+  },
+  {
+    id: 3,
+    name: "Mike Johnson",
+    title: "Web Developer",
+    text: "The platform's adaptive learning technology is revolutionary. It understands my learning style and adjusts accordingly.",
+    image: "/placeholder.svg",
+    color: "from-green-500/20 to-green-500/5",
+    rating: 5,
+    icon: Heart,
+    iconBg: "bg-green-500/10",
+    iconColor: "text-green-500",
+    achievement: "Mastered 5 new technologies",
+  },
+]
 
 export default function Home() {
   const router = useRouter()
@@ -270,7 +312,7 @@ export default function Home() {
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 1 }}
           >
-            <TestimonialSlider />
+            <TestimonialSlider1 testimonials={testimonials} />
           </motion.div>
         </div>
       </section>

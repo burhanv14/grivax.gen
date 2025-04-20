@@ -17,20 +17,7 @@ import Image from "next/image"
 import ReCaptchaElement from "@/components/ReCaptchaElement"
 import ReCaptchaProvider from "@/components/ReCaptchaProvider"
 import { signIn } from "next-auth/react"
-import { getServerSession } from "next-auth"
 import { motion } from "framer-motion"
-
-// Define a type that matches what we get from getServerSession
-type SessionUser = {
-  name?: string | null
-  email?: string | null
-  image?: string | null
-}
-
-export const getUserSession = async (): Promise<SessionUser | null> => {
-  const authUserSession = await getServerSession()
-  return authUserSession?.user || null
-}
 
 export default function SignupPage() {
   const [isLoading, setIsLoading] = useState(false)
@@ -259,7 +246,7 @@ export default function SignupPage() {
 
             {error && (
               <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mt-6">
-                <Alert variant="destructive" className="mb-6">
+                <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
@@ -268,11 +255,9 @@ export default function SignupPage() {
 
             {success && (
               <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mt-6">
-                <Alert variant="success" className="mb-6 bg-green-50 text-green-800 border-green-200">
-                  <AlertDescription className="flex items-center">
-                    <Check className="h-4 w-4 mr-2" />
-                    {success}
-                  </AlertDescription>
+                <Alert variant="default">
+                  <Check className="h-4 w-4" />
+                  <AlertDescription>{success}</AlertDescription>
                 </Alert>
               </motion.div>
             )}
@@ -356,45 +341,9 @@ export default function SignupPage() {
                         <span>Password strength: {getPasswordStrengthLabel()}</span>
                         <span>{passwordStrength}%</span>
                       </div>
-                      <Progress
-                        value={passwordStrength}
-                        className="h-1.5"
-                        indicatorClassName={getPasswordStrengthColor()}
-                      />
-
-                      <div className="mt-2 grid grid-cols-2 gap-x-2 gap-y-1 text-xs text-muted-foreground">
-                        <div className="flex items-center">
-                          <div
-                            className={`mr-1.5 h-3 w-3 rounded-full flex items-center justify-center ${password.length >= 8 ? "bg-green-500" : "bg-muted"}`}
-                          >
-                            {password.length >= 8 && <Check className="h-2 w-2 text-white" />}
-                          </div>
-                          <span>8+ characters</span>
-                        </div>
-                        <div className="flex items-center">
-                          <div
-                            className={`mr-1.5 h-3 w-3 rounded-full flex items-center justify-center ${/[A-Z]/.test(password) ? "bg-green-500" : "bg-muted"}`}
-                          >
-                            {/[A-Z]/.test(password) && <Check className="h-2 w-2 text-white" />}
-                          </div>
-                          <span>Uppercase</span>
-                        </div>
-                        <div className="flex items-center">
-                          <div
-                            className={`mr-1.5 h-3 w-3 rounded-full flex items-center justify-center ${/[0-9]/.test(password) ? "bg-green-500" : "bg-muted"}`}
-                          >
-                            {/[0-9]/.test(password) && <Check className="h-2 w-2 text-white" />}
-                          </div>
-                          <span>Number</span>
-                        </div>
-                        <div className="flex items-center">
-                          <div
-                            className={`mr-1.5 h-3 w-3 rounded-full flex items-center justify-center ${/[^A-Za-z0-9]/.test(password) ? "bg-green-500" : "bg-muted"}`}
-                          >
-                            {/[^A-Za-z0-9]/.test(password) && <Check className="h-2 w-2 text-white" />}
-                          </div>
-                          <span>Special char</span>
-                        </div>
+                      <div className="relative">
+                        <Progress value={passwordStrength} className="h-2" />
+                        <div className={`absolute inset-0 bg-opacity-20 ${getPasswordStrengthColor()}`} />
                       </div>
                     </div>
                   )}

@@ -596,7 +596,7 @@ export default function CourseClient({
 
                   {/* Update progress display */}
                   <motion.div
-                    className="flex items-center gap-4"
+                    className="flex items-center gap-4 md:pt-4"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.4 }}

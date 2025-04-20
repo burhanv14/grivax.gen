@@ -157,3 +157,15 @@ export function loginIsRequiredClient() {
     if (!session) router.push("/login");
   }
 }
+
+// Define a type that matches what we get from getServerSession
+export type SessionUser = {
+  name?: string | null
+  email?: string | null
+  image?: string | null
+}
+
+export const getUserSession = async (): Promise<SessionUser | null> => {
+  const authUserSession = await getServerSession()
+  return authUserSession?.user || null
+}

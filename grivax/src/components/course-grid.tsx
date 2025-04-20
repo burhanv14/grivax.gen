@@ -4,7 +4,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 
 // Mock data - would be fetched from an API in a real application
-const allCourses = [
+const allCourses: Course[] = [
   {
     id: "1",
     title: "Machine Learning Fundamentals",
@@ -77,13 +77,29 @@ const allCourses = [
   },
 ]
 
-interface CourseGridProps {
-  filter?: string
+interface Course {
+  id: string;
+  title: string;
+  description: string;
+  image: string;
+  duration: string;
+  level: string;
+  price?: number;
+  rating: number;
+  instructor?: string;
+  category: string[];
+  tag?: string;
+  students?: number;
 }
 
-export default function CourseGrid({ filter }: CourseGridProps) {
+interface CourseGridProps {
+  courses: Course[];
+  filter?: string;
+}
+
+export function CourseGrid({ courses, filter }: CourseGridProps) {
   // Filter courses based on the selected filter
-  const filteredCourses = filter ? allCourses.filter((course) => course.category.includes(filter)) : allCourses
+  const filteredCourses = filter ? courses.filter((course) => course.category.includes(filter)) : courses;
 
   return (
     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

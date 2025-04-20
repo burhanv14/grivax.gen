@@ -211,7 +211,7 @@ export default function LoginPage() {
 
             {success && (
               <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mt-6">
-                <Alert variant="success" className="mb-6 bg-green-50 text-green-800 border-green-200">
+                <Alert variant="default" className="mb-6 bg-green-50 text-green-800 border-green-200">
                   <AlertDescription className="flex items-center">
                     <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />

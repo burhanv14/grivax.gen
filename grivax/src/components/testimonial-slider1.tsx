@@ -5,6 +5,24 @@ import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from
 import { ArrowLeft, ArrowRight, Quote, Star, Clock, Award, Heart } from "lucide-react"
 import Image from "next/image"
 
+interface Testimonial {
+  id: number;
+  name: string;
+  title: string;
+  text: string;
+  image: string;
+  color: string;
+  rating: number;
+  icon: React.ElementType;
+  iconBg: string;
+  iconColor: string;
+  achievement: string;
+}
+
+interface TestimonialSlider1Props {
+  testimonials: Testimonial[];
+}
+
 const testimonials = [
   {
     id: 1,
@@ -61,7 +79,11 @@ const testimonials = [
 ]
 
 // Star rating component with animation
-const StarRating = ({ rating }) => {
+interface StarRatingProps {
+  rating: number;
+}
+
+const StarRating = ({ rating }: StarRatingProps) => {
   return (
     <div className="flex items-center gap-1">
       {[1, 2, 3, 4, 5].map((star) => {
@@ -107,14 +129,16 @@ const StarRating = ({ rating }) => {
   )
 }
 
-export default function TestimonialSlider() {
+export function TestimonialSlider1({ testimonials }: TestimonialSlider1Props) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isDragging, setIsDragging] = useState(false)
-  const [startX, setStartX] = useState(0)
-  const [direction, setDirection] = useState(0) // -1 for left, 1 for right
-  const containerRef = useRef(null)
-  const autoplayRef = useRef(null)
-  const progressRef = useRef(null)
+  const [startX, setStartX] = useState<number | null>(null)
+  const [scrollLeft, setScrollLeft] = useState<number | null>(null)
+  const [autoPlayTimeout, setAutoPlayTimeout] = useState<NodeJS.Timeout | null>(null)
+  const [isHovered, setIsHovered] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const autoplayRef = useRef<NodeJS.Timeout | null>(null)
+  const progressRef = useRef<number | null>(null)
 
   // Progress animation
   const progress = useMotionValue(0)
@@ -127,9 +151,20 @@ export default function TestimonialSlider() {
   const dragScale = useTransform(dragXSpring, [-200, 0, 200], [0.95, 1, 0.95])
   const dragRotate = useTransform(dragXSpring, [-200, 0, 200], [2, 0, -2])
 
+  const startAutoPlay = () => {
+    if (autoplayRef.current) {
+      clearTimeout(autoplayRef.current)
+    }
+    autoplayRef.current = setTimeout(() => {
+      if (!isDragging && !isHovered) {
+        handleNext()
+      }
+    }, 5000)
+  }
+
   // Keyboard navigation
   useEffect(() => {
-    const handleKeyDown = (e) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "ArrowLeft") {
         handlePrev()
       } else if (e.key === "ArrowRight") {
@@ -186,49 +221,83 @@ export default function TestimonialSlider() {
   }, [currentIndex, isDragging])
 
   const handlePrev = () => {
-    setDirection(-1)
     setCurrentIndex((prev) => (prev - 1 + testimonials.length) % testimonials.length)
     resetAutoplay()
   }
 
   const handleNext = () => {
-    setDirection(1)
     setCurrentIndex((prev) => (prev + 1) % testimonials.length)
     resetAutoplay()
   }
 
-  const handleDragStart = (e) => {
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     setIsDragging(true)
-    setStartX(e.clientX || (e.touches && e.touches[0].clientX) || 0)
+    setStartX(e.pageX - containerRef.current!.offsetLeft)
+    setScrollLeft(containerRef.current!.scrollLeft)
   }
 
-  const handleDragEnd = (e) => {
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!isDragging) return
+    e.preventDefault()
+    const x = e.pageX - containerRef.current!.offsetLeft
+    const walk = (x - startX!) * 2
+    containerRef.current!.scrollLeft = scrollLeft! - walk
+  }
 
-    const endX = e.clientX || (e.changedTouches && e.changedTouches[0].clientX) || 0
-    const diffX = endX - startX
-
-    if (diffX > 100) {
-      handlePrev()
-    } else if (diffX < -100) {
-      handleNext()
-    }
-
-    // Reset drag animation
-    dragX.set(0)
+  const handleMouseUp = () => {
     setIsDragging(false)
   }
 
-  const handleDragMove = (e) => {
-    if (!isDragging) return
-
-    const currentX = e.clientX || (e.touches && e.touches[0].clientX) || 0
-    const diffX = currentX - startX
-
-    // Visual feedback during drag
-    if (Math.abs(diffX) > 5) {
-      dragX.set(diffX * 0.5)
+  const handleMouseEnter = () => {
+    setIsHovered(true)
+    if (autoPlayTimeout) {
+      clearTimeout(autoPlayTimeout)
+      setAutoPlayTimeout(null)
     }
+  }
+
+  const handleMouseLeave = () => {
+    setIsHovered(false)
+    startAutoPlay()
+  }
+
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    setIsDragging(true)
+    setStartX(e.touches[0].pageX - containerRef.current!.offsetLeft)
+    setScrollLeft(containerRef.current!.scrollLeft)
+  }
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (!isDragging) return
+    e.preventDefault()
+    const x = e.touches[0].pageX - containerRef.current!.offsetLeft
+    const walk = (x - startX!) * 2
+    containerRef.current!.scrollLeft = scrollLeft! - walk
+  }
+
+  const handleTouchEnd = () => {
+    setIsDragging(false)
+  }
+
+  const scrollToSlide = (direction: 'left' | 'right') => {
+    if (!containerRef.current) return
+
+    const slideWidth = containerRef.current.offsetWidth
+    const currentScroll = containerRef.current.scrollLeft
+    const targetScroll = direction === 'left' ? currentScroll - slideWidth : currentScroll + slideWidth
+
+    containerRef.current.scrollTo({
+      left: targetScroll,
+      behavior: 'smooth',
+    })
+  }
+
+  const handlePrevClick = () => {
+    scrollToSlide('left')
+  }
+
+  const handleNextClick = () => {
+    scrollToSlide('right')
   }
 
   const testimonial = testimonials[currentIndex]
@@ -236,7 +305,7 @@ export default function TestimonialSlider() {
 
   // Variants for animations
   const cardVariants = {
-    enter: (direction) => ({
+    enter: (direction: number) => ({
       x: direction > 0 ? 300 : -300,
       opacity: 0,
       scale: 0.9,
@@ -254,7 +323,7 @@ export default function TestimonialSlider() {
         rotateY: { type: "spring", stiffness: 300, damping: 30 },
       },
     },
-    exit: (direction) => ({
+    exit: (direction: number) => ({
       x: direction > 0 ? -300 : 300,
       opacity: 0,
       scale: 0.9,
@@ -350,18 +419,14 @@ export default function TestimonialSlider() {
       <motion.div
         ref={containerRef}
         className="relative overflow-hidden rounded-xl p-1 cursor-grab active:cursor-grabbing"
-        onMouseDown={handleDragStart}
-        onMouseUp={handleDragEnd}
-        onMouseMove={handleDragMove}
-        onMouseLeave={() => {
-          if (isDragging) {
-            dragX.set(0)
-          }
-          setIsDragging(false)
-        }}
-        onTouchStart={handleDragStart}
-        onTouchEnd={handleDragEnd}
-        onTouchMove={handleDragMove}
+        onMouseDown={handleMouseDown}
+        onMouseUp={handleMouseUp}
+        onMouseMove={handleMouseMove}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        onTouchMove={handleTouchMove}
         style={{
           opacity: isDragging ? dragOpacity : 1,
           scale: isDragging ? dragScale : 1,
@@ -383,12 +448,12 @@ export default function TestimonialSlider() {
         </AnimatePresence>
 
         {/* Card content with animation */}
-        <AnimatePresence initial={false} custom={direction} mode="wait">
+        <AnimatePresence initial={false} custom={currentIndex} mode="wait">
           <motion.div
             key={`testimonial-${currentIndex}`}
             className="bg-background/90 backdrop-blur-sm rounded-lg p-8 shadow-lg border border-muted/50 dark:bg-muted/50"
             variants={cardVariants}
-            custom={direction}
+            custom={currentIndex}
             initial="enter"
             animate="center"
             exit="exit"
@@ -487,7 +552,6 @@ export default function TestimonialSlider() {
           <motion.button
             key={index}
             onClick={() => {
-              setDirection(index > currentIndex ? 1 : -1)
               setCurrentIndex(index)
               resetAutoplay()
             }}
@@ -504,7 +568,7 @@ export default function TestimonialSlider() {
       {/* Navigation arrows with animation */}
       <div className="absolute -bottom-12 left-0 right-0 flex justify-center gap-8 mt-4">
         <motion.button
-          onClick={handlePrev}
+          onClick={handlePrevClick}
           className="group relative flex items-center justify-center"
           variants={navButtonVariants}
           initial="initial"
@@ -526,7 +590,7 @@ export default function TestimonialSlider() {
         </motion.button>
 
         <motion.button
-          onClick={handleNext}
+          onClick={handleNextClick}
           className="group relative flex items-center justify-center"
           variants={navButtonVariants}
           initial="initial"

@@ -21,7 +21,7 @@ interface GeneratedCourseGridProps {
 }
 
 export function GeneratedCourseGrid({ courseData }: GeneratedCourseGridProps) {
-  const formattedModules = (courseData.modules || []).map((module: any, index: number) => ({
+  const formattedModules = (courseData.modules || []).map((module: CourseModule, index: number) => ({
     week: module.week || index + 1,
     title: module.title || `Module ${index + 1}`,
     objectives: Array.isArray(module.objectives) ? module.objectives : [],
@@ -40,7 +40,7 @@ export function GeneratedCourseGrid({ courseData }: GeneratedCourseGridProps) {
               <div className="space-y-2">
                 <h3 className="font-medium">Objectives:</h3>
                 <ul className="list-disc list-inside space-y-1">
-                  {module.objectives.map((objective, idx) => (
+                  {module.objectives.map((objective: string, idx: number) => (
                     <li key={idx} className="text-sm text-muted-foreground">
                       {objective}
                     </li>

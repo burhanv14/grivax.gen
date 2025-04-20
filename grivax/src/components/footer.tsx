@@ -235,7 +235,13 @@ export default function Footer() {
 }
 
 // Component for social icons
-function SocialIcon({ icon, label, isDark }) {
+interface SocialIconProps {
+  icon: React.ReactNode;
+  label: string;
+  isDark: boolean;
+}
+
+function SocialIcon({ icon, label, isDark }: SocialIconProps) {
   return (
     <Link
       href="#"
@@ -248,7 +254,13 @@ function SocialIcon({ icon, label, isDark }) {
 }
 
 // Component for footer columns
-function FooterColumn({ title, children, isDark }) {
+interface FooterColumnProps {
+  title: string
+  children: React.ReactNode
+  isDark: boolean
+}
+
+function FooterColumn({ title, children, isDark }: FooterColumnProps) {
   return (
     <div className={`rounded-lg p-4 ${isDark ? "bg-zinc-900/30" : "bg-zinc-100/70"}`}>
       <h3 className={`mb-5 text-sm font-semibold uppercase tracking-wider ${isDark ? "text-white" : "text-zinc-900"}`}>
@@ -260,7 +272,13 @@ function FooterColumn({ title, children, isDark }) {
 }
 
 // Component for footer links
-function FooterLink({ href, label, isDark }) {
+interface FooterLinkProps {
+  href: string
+  label: string
+  isDark: boolean
+}
+
+function FooterLink({ href, label, isDark }: FooterLinkProps) {
   return (
     <li>
       <Link
