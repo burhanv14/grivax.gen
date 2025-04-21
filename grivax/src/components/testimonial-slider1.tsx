@@ -29,7 +29,7 @@ const testimonials = [
     name: "Rahul Gupta",
     title: "Computer Science Student",
     text: "Grivax has completely transformed my learning experience. The personalized courses and quizzes have helped me grasp complex programming concepts I struggled with before.",
-    image: "https://i.pravatar.cc/",
+    image: "https://i.pravatar.cc/150?img=1",
     color: "from-primary/20 to-primary/5",
     rating: 5,
     icon: Star,
@@ -42,7 +42,7 @@ const testimonials = [
     name: "Rohan Joshi",
     title: "Mathematics Teacher",
     text: "I highly recommend Grivax to both students and educators. The adaptive learning technology is truly innovative and effective for teaching advanced mathematical concepts.",
-    image: "https://i.pravatar.cc/",
+    image: "https://i.pravatar.cc/150?img=2",
     color: "from-purple-600/20 to-purple-600/5",
     rating: 4.5,
     icon: Award,
@@ -55,7 +55,7 @@ const testimonials = [
     name: "Karan Jain",
     title: "Parent of High School Student",
     text: "As a parent, I'm thrilled with the progress my child has made using Grivax. It's engaging, educational, and tailored to their individual needs. Their grades have improved significantly!",
-    image: "https://i.pravatar.cc/",
+    image: "https://i.pravatar.cc/150?img=3",
     color: "from-green-500/20 to-green-500/5",
     rating: 5,
     icon: Heart,
@@ -68,7 +68,7 @@ const testimonials = [
     name: "Sheetal Gupta",
     title: "Biology Researcher",
     text: "The interactive learning modules for scientific subjects are outstanding. I use Grivax to stay updated on the latest research methodologies and to prepare for my lectures.",
-    image: "https://i.pravatar.cc/",
+    image: "https://i.pravatar.cc/150?img=4",
     color: "from-blue-500/20 to-blue-500/5",
     rating: 4.5,
     icon: Clock,
@@ -293,11 +293,11 @@ export function TestimonialSlider1({ testimonials }: TestimonialSlider1Props) {
   }
 
   const handlePrevClick = () => {
-    scrollToSlide('left')
+    handlePrev()
   }
 
   const handleNextClick = () => {
-    scrollToSlide('right')
+    handleNext()
   }
 
   const testimonial = testimonials[currentIndex]
