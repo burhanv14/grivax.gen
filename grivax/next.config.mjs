@@ -6,17 +6,17 @@ const nextConfig = {
   },
   images: {
     dangerouslyAllowSVG: true,
-    contentDispositionType: 'attachment',
+    contentDispositionType: "attachment",
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: '**',
+        protocol: "https",
+        hostname: "**.example.com",
       },
       {
-        protocol: 'http',
-        hostname: '**',
-      }
+        protocol: "http",
+        hostname: "**.example.com",
+      },
     ],
     unoptimized: true,
   },
