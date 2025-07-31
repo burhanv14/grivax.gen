@@ -33,7 +33,7 @@
     "@radix-ui/react-tooltip": "^1.2.0",
     "@radix-ui/react-use-escape-keydown": "^1.1.1",
     "@react-three/drei": "^9.122.0",
-    "@react-three/fiber": "^8.18.0",
+    "@react-three/fiber": "8.2.2",
     "@types/react-youtube": "^7.10.0",
     "@xyflow/react": "^12.5.6",
     "axios": "^1.8.4",

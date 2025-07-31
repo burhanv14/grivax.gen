@@ -135,9 +135,16 @@ export async function POST(
       }
     }
 
+    const baseUrl = process.env.BASE_URL; // Ensure this is defined in your environment variables
+    if (!baseUrl) {
+      throw new Error("BASE_URL is not defined in environment variables");
+    }
+
+    const statusEndpoint = `${baseUrl}/api/generate-course/${params.user_id}/${params.course_id}/status`;
+
     // Send status acknowledgment
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/generate-course/${params.user_id}/${params.course_id}/status`, {
+      await fetch(statusEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -624,4 +631,4 @@ async function createUnit(course_id: string, unitDetails: {
     console.error('Error creating unit:', error);
     throw new Error(`Failed to create unit ${unitDetails.unitNumber}`);
   }
-} 
+}
