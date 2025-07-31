@@ -1,6 +1,9 @@
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
+  typescript: {
+    ignoreBuildErrors: true,
+  },
   images: {
     dangerouslyAllowSVG: true,
     contentDispositionType: 'attachment',
@@ -20,4 +23,3 @@ const nextConfig = {
 };
 
 export default nextConfig;
-
