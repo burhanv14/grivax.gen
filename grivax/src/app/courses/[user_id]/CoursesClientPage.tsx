@@ -234,6 +234,16 @@ export default function CoursesClientPage({ params }: { params: { user_id: strin
           </motion.div>
         </div>
 
+        {/* Add the new course button here */}
+        <div className="flex justify-end mb-4">
+          <Button asChild size="lg" className="px-6">
+            <Link href={`/generate-courses/${userId}`}>
+              <Plus className="mr-2 h-5 w-5" />
+              <span>Create New Course</span>
+            </Link>
+          </Button>
+        </div>
+
         {filteredCourses.length > 0 ? (
           <motion.div
             className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
