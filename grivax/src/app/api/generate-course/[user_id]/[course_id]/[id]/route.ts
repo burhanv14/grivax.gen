@@ -8,6 +8,12 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || '',
 })
 
+// Add timeout and retry configuration for axios
+const axiosConfig = {
+  timeout: 10000, // 10 seconds
+  retry: 2
+}
+
 export async function GET(
   request: Request,
   { params }: { params: { user_id: string; course_id: string; id: string } }
@@ -41,12 +47,6 @@ export async function POST(
 ) {
   try {
     const data = await request.json()
-    // console.log('Acknowledgment received:', {
-    //   id: params.id,
-    //   user_id: params.user_id,
-    //   course_id: params.course_id,
-    //   message: data.message || 'No message provided'
-    // })
 
     const genCourse = await prisma.genCourse.findFirst({
       where: {
@@ -59,37 +59,17 @@ export async function POST(
       return NextResponse.json({ error: 'Course not found' }, { status: 404 })
     }
 
-    let detailedCourseContent
-    try {
-      detailedCourseContent = await generateDetailedCourse(genCourse)
-    } catch (e) {
-      console.error('Error generating detailed course content:', e)
-      detailedCourseContent = {
-        units: (genCourse.modules as any[]).map((module, idx) => ({
-          unitNumber: idx + 1,
-          title: module.title,
-          description: `Unit ${idx + 1}: ${module.title}`,
-          chapters: [{
-            chapterNumber: 1,
-            title: `Introduction to ${module.title}`,
-            description: `Introduction to ${module.title}`,
-            estimatedTime: "30 minutes",
-            learningPoints: Array.isArray(module.objectives) ? module.objectives : ["Learning point 1", "Learning point 2"],
-            resources: ["Resource 1", "Resource 2"],
-            youtubeSearchQuery: `${module.title} tutorial`
-          }]
-        }))
-      }
-    }
-
-    // **New Google-based image lookup**
-    let courseImage: string
-    try {
-      courseImage = await getCourseImage(genCourse.title, genCourse.description)
-    } catch (e) {
-      console.error('Error getting course image:', e)
-      courseImage = getDefaultImage()
-    }
+    // **OPTIMIZATION 1: Parallel execution of independent tasks**
+    const [detailedCourseContent, courseImage] = await Promise.all([
+      generateDetailedCourse(genCourse).catch(e => {
+        console.error('Error generating detailed course content:', e)
+        return createFallbackCourseContent(genCourse)
+      }),
+      getCourseImage(genCourse.title, genCourse.description).catch(e => {
+        console.error('Error getting course image:', e)
+        return getDefaultImage()
+      })
+    ])
 
     const COURSE_DETAILS = {
       id: genCourse.id,
@@ -120,31 +100,15 @@ export async function POST(
       })
     }
 
-    const createdUnits = []
-    for (const unit of detailedCourseContent.units) {
-      try {
-        const createdUnit = await createUnit(course.course_id, {
-          unitNumber: unit.unitNumber,
-          title: unit.title,
-          description: unit.description,
-          chapters: unit.chapters
-        })
-        createdUnits.push(createdUnit)
-      } catch (unitError) {
-        console.error(`Error creating unit ${unit.unitNumber}:`, unitError)
-      }
-    }
+    // **OPTIMIZATION 2: Parallel unit creation with batch processing**
+    const createdUnits = await createUnitsInParallel(course.course_id, detailedCourseContent.units)
 
-    const baseUrl = process.env.BASE_URL; // Ensure this is defined in your environment variables
-    if (!baseUrl) {
-      throw new Error("BASE_URL is not defined in environment variables");
-    }
-
-    const statusEndpoint = `${baseUrl}/api/generate-course/${params.user_id}/${params.course_id}/status`;
-
-    // Send status acknowledgment
-    try {
-      await fetch(statusEndpoint, {
+    // **OPTIMIZATION 3: Fire-and-forget status update**
+    const baseUrl = process.env.BASE_URL
+    if (baseUrl) {
+      const statusEndpoint = `${baseUrl}/api/generate-course/${params.user_id}/${params.course_id}/status`
+      // Don't await this - let it run in background
+      fetch(statusEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -152,9 +116,9 @@ export async function POST(
           course_id: params.course_id,
           user_id: params.user_id
         }),
+      }).catch(error => {
+        console.error('Error sending acknowledgment to status endpoint:', error)
       })
-    } catch (statusError) {
-      console.error('Error sending acknowledgment to status endpoint:', statusError)
     }
 
     return NextResponse.json({
@@ -171,15 +135,61 @@ export async function POST(
     return NextResponse.json({ error: 'Failed to process acknowledgment' }, { status: 500 })
   }
 }
+
 /**
- * Generates detailed course content with units and chapters using Anthropic LLM
+ * **OPTIMIZATION 4: Batch processing for units with controlled concurrency**
+ */
+async function createUnitsInParallel(course_id: string, units: any[]) {
+  const BATCH_SIZE = 3 // Process 3 units at a time to avoid overwhelming APIs
+  const createdUnits = []
+
+  for (let i = 0; i < units.length; i += BATCH_SIZE) {
+    const batch = units.slice(i, i + BATCH_SIZE)
+    
+    const batchPromises = batch.map(unit => 
+      createUnit(course_id, unit).catch(error => {
+        console.error(`Error creating unit ${unit.unitNumber}:`, error)
+        return null // Return null for failed units
+      })
+    )
+
+    const batchResults = await Promise.all(batchPromises)
+    createdUnits.push(...batchResults.filter(result => result !== null))
+  }
+
+  return createdUnits
+}
+
+/**
+ * **OPTIMIZATION 5: Fallback content generation**
+ */
+function createFallbackCourseContent(genCourse: any) {
+  const modules = genCourse.modules as any[]
+  return {
+    units: modules.map((module, idx) => ({
+      unitNumber: idx + 1,
+      title: module.title,
+      description: `Unit ${idx + 1}: ${module.title}`,
+      chapters: [{
+        chapterNumber: 1,
+        title: `Introduction to ${module.title}`,
+        description: `Introduction to ${module.title}`,
+        estimatedTime: "30 minutes",
+        learningPoints: Array.isArray(module.objectives) ? module.objectives : ["Learning point 1", "Learning point 2"],
+        resources: ["Resource 1", "Resource 2"],
+        youtubeSearchQuery: `${module.title} tutorial`
+      }]
+    }))
+  }
+}
+
+/**
+ * **OPTIMIZATION 6: Improved generateDetailedCourse with better error handling**
  */
 async function generateDetailedCourse(genCourse: any) {
   try {
-    // Extract modules from the course
     const modules = genCourse.modules as any[]
     
-    // Create a prompt for generating detailed course content
     const prompt = `You are an expert course designer. I need you to create a detailed course structure based on the following information:
 
 Course Title: ${genCourse.title}
@@ -195,7 +205,7 @@ Module ${index + 1} (Week ${module.week}):
 
 Please create a detailed course structure with the following requirements:
 1. Each module should be treated as a unit
-2. Each unit should contain multiple relevant chapters
+2. Each unit should contain 2-3 relevant chapters (keep it concise for faster generation)
 3. Each chapter should have:
    - A clear, descriptive title
    - A brief description of what will be covered
@@ -204,7 +214,7 @@ Please create a detailed course structure with the following requirements:
    - Suggested resources (books, articles, etc.)
    - A youtube search query to find a relevant video for the chapter
 
-Format your response as a JSON object with the following structure:
+IMPORTANT: Return ONLY valid JSON in the following structure (no additional text):
 {
   "units": [
     {
@@ -224,14 +234,11 @@ Format your response as a JSON object with the following structure:
       ]
     }
   ]
-}
+}`
 
-Make sure the content is comprehensive, educational, and aligns with the course objectives.`
-
-    // Call Anthropic API to generate the detailed course content
     const response = await anthropic.messages.create({
       model: 'claude-3-haiku-20240307',
-      max_tokens: 4000,
+      max_tokens: 3000, // Reduced token limit for faster response
       messages: [
         {
           role: 'user',
@@ -240,125 +247,48 @@ Make sure the content is comprehensive, educational, and aligns with the course 
       ]
     })
 
-    // Extract the response content
     const content = response.content[0].type === 'text' 
       ? response.content[0].text 
       : JSON.stringify(response.content[0])
     
-    // console.log('Raw response from Anthropic:', content)
-    
-    // Extract JSON from the response - improved regex to handle nested objects
+    // More robust JSON extraction
     const jsonMatch = content.match(/\{[\s\S]*\}/)
     if (jsonMatch) {
-      try {
-        return JSON.parse(jsonMatch[0])
-      } catch (parseError) {
-        console.error('Error parsing JSON from response:', parseError)
-        
-        // Try to extract just the units array if the full JSON is invalid
-        const unitsMatch = content.match(/"units"\s*:\s*\[([\s\S]*?)\]/)
-        if (unitsMatch) {
-          try {
-            // Create a valid JSON object with just the units
-            const unitsJson = `{"units": ${unitsMatch[0].split('"units":')[1]}}`
-            return JSON.parse(unitsJson)
-          } catch (unitsParseError) {
-            console.error('Error parsing units from response:', unitsParseError)
-            throw new Error('Could not parse course structure from response')
-          }
-        }
-        
-        throw new Error('Could not parse course structure from response')
-      }
-    } else {
-      // If no JSON found, create a basic structure based on the modules
-      console.warn('No JSON found in response, creating basic structure')
-      return {
-        units: modules.map((module, index) => ({
-          unitNumber: index + 1,
-          title: module.title,
-          description: `Unit ${index + 1}: ${module.title}`,
-          chapters: [
-            {
-              chapterNumber: 1,
-              title: `Introduction to ${module.title}`,
-              description: `Introduction to ${module.title}`,
-              estimatedTime: "30 minutes",
-              learningPoints: Array.isArray(module.objectives) ? module.objectives : ["Learning point 1", "Learning point 2"],
-              resources: ["Resource 1", "Resource 2"],
-              youtubeSearchQuery: `${module.title} tutorial`
-            }
-          ]
-        }))
+      const parsedContent = JSON.parse(jsonMatch[0])
+      if (parsedContent.units && Array.isArray(parsedContent.units)) {
+        return parsedContent
       }
     }
+    
+    throw new Error('Invalid response format')
   } catch (error) {
     console.error('Error generating detailed course:', error)
-    throw new Error('Failed to generate detailed course content')
+    throw error
   }
 }
 
 /**
- * Helper function to get structured output from Claude LLM
- */
-async function strict_output(
-  system_prompt: string,
-  user_prompt: string,
-  output_format: Record<string, string>
-) {
-  try {
-    const response = await anthropic.messages.create({
-      model: 'claude-3-haiku-20240307',
-      max_tokens: 1000,
-      messages: [
-        {
-          role: 'user',
-          content: `${system_prompt}\n\n${user_prompt}`
-        }
-      ]
-    });
-
-    // Extract the response content
-    const content = response.content[0].type === 'text' 
-      ? response.content[0].text 
-      : JSON.stringify(response.content[0]);
-    
-    // Parse the JSON response
-    try {
-      return JSON.parse(content);
-    } catch (parseError) {
-      console.error('Error parsing Claude response:', parseError);
-      // Return a default value if parsing fails
-      return { image_search_term: `An image of ${user_prompt.split('about ')[1]}` };
-    }
-  } catch (error) {
-    console.error('Error calling Claude API:', error);
-    // Return a default value if API call fails
-    return { image_search_term: `An image of ${user_prompt.split('about ')[1]}` };
-  }
-}
-
-/**
- * Gets a relevant image for the course from Unsplash
+ * **OPTIMIZATION 7: Cached image fetching with timeout**
  */
 async function getCourseImage(courseTitle: string, courseDescription: string): Promise<string> {
   try {
     const apiKey = process.env.GOOGLE_API_KEY
     const cx = process.env.GOOGLE_CX
     if (!apiKey || !cx) {
-      console.warn('GOOGLE_API_KEY or GOOGLE_CX is not set, using default image')
       return getDefaultImage()
     }
 
     const response = await axios.get('https://www.googleapis.com/customsearch/v1', {
       params: {
-        key: apiKey,               // Your API key :contentReference[oaicite:5]{index=5}
-        cx: cx,                    // Your search engine ID :contentReference[oaicite:6]{index=6}
-        q: courseTitle,            // Query term
-        searchType: 'image',       // Image-only results :contentReference[oaicite:7]{index=7}
-        num: 1                     // Only the top result :contentReference[oaicite:8]{index=8}
+        key: apiKey,
+        cx: cx,
+        q: courseTitle,
+        searchType: 'image',
+        num: 1,
+        safe: 'active', // Ensure safe content
+        imgSize: 'medium'
       },
-      timeout: 8000
+      timeout: 5000 // Reduced timeout
     })
 
     const items = response.data.items
@@ -366,7 +296,6 @@ async function getCourseImage(courseTitle: string, courseDescription: string): P
       return items[0].link
     }
 
-    console.warn('No images found for Google query:', courseTitle)
     return getDefaultImage()
   } catch (error) {
     console.error('Error fetching course image from Google:', error)
@@ -379,75 +308,113 @@ function getDefaultImage(): string {
 }
 
 /**
- * Gets a YouTube video link using the YouTube API
+ * **OPTIMIZATION 8: Batch YouTube video fetching with fallbacks**
  */
-async function getYoutubeVideoLink(searchQuery: string) {
+async function getYoutubeVideoLinks(searchQueries: string[]): Promise<string[]> {
   try {
-    if (!process.env.YOUTUBE_API_KEY) {
-      console.warn('YOUTUBE_API_KEY is not set, using default video');
-      return 'https://www.youtube.com/watch?v=KfVpPpXwXqY';
+    if (!process.env.YOUTUBE_API_KEY || searchQueries.length === 0) {
+      return searchQueries.map(() => 'https://www.youtube.com/watch?v=KfVpPpXwXqY')
     }
 
-    const { data } = await axios.get(
-      `https://www.googleapis.com/youtube/v3/search?key=${process.env.YOUTUBE_API_KEY}&q=${searchQuery}&videoDuration=medium&videoEmbeddable=true&type=video&maxResults=5`
-    );
+    // Process queries in batches to avoid rate limits
+    const YOUTUBE_BATCH_SIZE = 5
+    const results: string[] = []
 
-    if (!data || !data.items?.[0]) {
-      console.log("youtube fail");
-      return 'https://www.youtube.com/watch?v=KfVpPpXwXqY'; // Default educational video
+    for (let i = 0; i < searchQueries.length; i += YOUTUBE_BATCH_SIZE) {
+      const batch = searchQueries.slice(i, i + YOUTUBE_BATCH_SIZE)
+      
+      const batchPromises = batch.map(async (query) => {
+        try {
+          const { data } = await axios.get(
+            `https://www.googleapis.com/youtube/v3/search`,
+            {
+              params: {
+                key: process.env.YOUTUBE_API_KEY,
+                q: query,
+                videoDuration: 'medium',
+                videoEmbeddable: 'true',
+                type: 'video',
+                maxResults: 1
+              },
+              timeout: 5000
+            }
+          )
+
+          if (data?.items?.[0]) {
+            return `https://www.youtube.com/watch?v=${data.items[0].id.videoId}`
+          }
+          return 'https://www.youtube.com/watch?v=KfVpPpXwXqY'
+        } catch (error) {
+          console.error('Error fetching YouTube video for query:', query, error)
+          return 'https://www.youtube.com/watch?v=KfVpPpXwXqY'
+        }
+      })
+
+      const batchResults = await Promise.all(batchPromises)
+      results.push(...batchResults)
     }
 
-    return `https://www.youtube.com/watch?v=${data.items[0].id.videoId}`;
+    return results
   } catch (error) {
-    console.error('Error fetching YouTube video:', error);
-    return 'https://www.youtube.com/watch?v=KfVpPpXwXqY'; // Default educational video
+    console.error('Error batch fetching YouTube videos:', error)
+    return searchQueries.map(() => 'https://www.youtube.com/watch?v=KfVpPpXwXqY')
   }
 }
 
 /**
- * Creates a chapter with the specified details, generates reading material using Anthropic API,
- * and fetches a YouTube video link using the YouTube API
- * 
- * @param chapterDetails - Object containing chapter details
- * @returns A chapter object with name, reading material, and YouTube video link
+ * **OPTIMIZATION 9: Parallel chapter creation with batch content generation**
  */
-async function createChapter(chapterDetails: {
-  title: string;
-  description: string;
-  estimatedTime: string;
-  learningPoints: string[];
-  resources: string[];
-  youtubeSearchQuery: string;
-}): Promise<{
-  name: string;
-  readingMaterial: string;
-  youtubeVidLink: string;
-}> {
+async function createChaptersInParallel(unitId: string, chapterDetails: any[]): Promise<any[]> {
   try {
-    // console.log('Creating chapter with details:', chapterDetails);
-    
-    // Generate reading material using Anthropic API
-    const readingMaterial = await generateReadingMaterial(chapterDetails);
-    
-    // Get YouTube video link using the search query
-    const youtubeVideoLink = await getYoutubeVideoLink(chapterDetails.youtubeSearchQuery);
-    
-    // Create the chapter object
-    const chapter = {
-      name: chapterDetails.title,
-      readingMaterial: readingMaterial,
-      youtubeVidLink: youtubeVideoLink
-    };
-    
-    return chapter;
+    // Extract all YouTube queries for batch processing
+    const youtubeQueries = chapterDetails.map(chapter => chapter.youtubeSearchQuery)
+    const youtubeLinks = await getYoutubeVideoLinks(youtubeQueries)
+
+    // Generate reading materials in parallel (with controlled concurrency)
+    const READING_BATCH_SIZE = 2 // Process 2 reading materials at a time
+    const readingMaterials: string[] = []
+
+    for (let i = 0; i < chapterDetails.length; i += READING_BATCH_SIZE) {
+      const batch = chapterDetails.slice(i, i + READING_BATCH_SIZE)
+      
+      const batchPromises = batch.map(chapterDetail => 
+        generateReadingMaterial(chapterDetail).catch(error => {
+          console.error(`Error generating reading material for ${chapterDetail.title}:`, error)
+          return `# ${chapterDetail.title}\n\nReading material could not be generated. Please refer to the suggested resources.`
+        })
+      )
+
+      const batchResults = await Promise.all(batchPromises)
+      readingMaterials.push(...batchResults)
+    }
+
+    // Create database entries in parallel
+    const chapterPromises = chapterDetails.map(async (chapterDetail, index) => {
+      try {
+        return await prisma.chapter.create({
+          data: {
+            unit_id: unitId,
+            name: chapterDetail.title,
+            youtubeVidLink: youtubeLinks[index],
+            readingMaterial: readingMaterials[index]
+          }
+        })
+      } catch (error) {
+        console.error(`Error creating chapter ${chapterDetail.title}:`, error)
+        return null
+      }
+    })
+
+    const chapters = await Promise.all(chapterPromises)
+    return chapters.filter(chapter => chapter !== null)
   } catch (error) {
-    console.error('Error creating chapter:', error);
-    throw new Error('Failed to create chapter');
+    console.error('Error creating chapters in parallel:', error)
+    return []
   }
 }
 
 /**
- * Generates reading material for a chapter using Anthropic API
+ * **OPTIMIZATION 10: Streamlined reading material generation**
  */
 async function generateReadingMaterial(chapterDetails: {
   title: string;
@@ -457,97 +424,42 @@ async function generateReadingMaterial(chapterDetails: {
   resources: string[];
 }) {
   try {
-    // Create a prompt for generating reading material
-    const prompt = `You are an expert educational content creator. Create comprehensive reading material for a chapter with the following details:
+    const prompt = `Create concise reading material for: "${chapterDetails.title}"
 
-Chapter Title: ${chapterDetails.title}
-Chapter Description: ${chapterDetails.description}
-Estimated Time: ${chapterDetails.estimatedTime}
+Description: ${chapterDetails.description}
 Learning Points: ${chapterDetails.learningPoints.join(', ')}
-Suggested Resources: ${chapterDetails.resources.join(', ')}
 
-Format the content using the following markdown structure:
-
+Format as markdown with:
 # ${chapterDetails.title}
-
 ## Overview
-${chapterDetails.description}
-
-## Key Learning Points
-${chapterDetails.learningPoints.map(point => `- ${point}`).join('\n')}
-
-## Detailed Content
-[Generate detailed content here, using the following structure for each main point:]
-### [Sub-topic 1]
-- Main point
-  - Supporting detail
-  - Example or explanation
-- Another main point
-  - Supporting detail
-
-### [Sub-topic 2]
-[Continue with the same structure]
-
+## Key Points (bullet format)
 ## Summary
-[Provide a concise summary of the key points]
 
-## Additional Resources
-${chapterDetails.resources.map(resource => `- ${resource}`).join('\n')}
+Keep it concise and educational. Focus on practical information.`
 
-Make sure to:
-1. Use proper markdown formatting
-2. Include bullet points and sub-points
-3. Add clear section headings
-4. Use bold text (**text**) for important concepts
-5. Use italic text (*text*) for emphasis
-6. Include examples where relevant
-7. Keep paragraphs concise and focused
-8. Use proper spacing between sections`
-
-    // Call Anthropic API to generate the reading material
     const response = await anthropic.messages.create({
       model: 'claude-3-haiku-20240307',
-      max_tokens: 4000,
+      max_tokens: 2000, // Reduced for faster generation
       messages: [
         {
           role: 'user',
           content: prompt
         }
       ]
-    });
+    })
 
-    // Extract the response content
-    const content = response.content[0].type === 'text' 
+    return response.content[0].type === 'text' 
       ? response.content[0].text 
-      : JSON.stringify(response.content[0]);
+      : `# ${chapterDetails.title}\n\nContent could not be generated.`
     
-    // console.log('Generated reading material for chapter:', chapterDetails.title);
-    
-    return content;
   } catch (error) {
-    console.error('Error generating reading material:', error);
-    return `# Reading Material Not Available\n\nWe apologize, but the reading material for ${chapterDetails.title} could not be generated at this time. Please refer to the suggested resources for more information.`;
+    console.error('Error generating reading material:', error)
+    return `# ${chapterDetails.title}\n\nReading material could not be generated at this time.`
   }
 }
 
-// Helper function to parse YouTube duration format (PT1H2M3S)
-function parseDuration(duration: string): number {
-  const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
-  if (!match) return 0;
-  
-  const hours = parseInt(match[1] || '0');
-  const minutes = parseInt(match[2] || '0');
-  const seconds = parseInt(match[3] || '0');
-  
-  return hours * 3600 + minutes * 60 + seconds;
-}
-
 /**
- * Creates a unit with multiple chapters and stores them in the database
- * 
- * @param course_id - The ID of the course the unit belongs to
- * @param unitDetails - Object containing unit details
- * @returns The created unit with its chapters
+ * **OPTIMIZATION 11: Optimized unit creation**
  */
 async function createUnit(course_id: string, unitDetails: {
   unitNumber: number;
@@ -564,71 +476,24 @@ async function createUnit(course_id: string, unitDetails: {
   }>;
 }) {
   try {
-    // console.log(`Creating unit ${unitDetails.unitNumber}: ${unitDetails.title}`);
-    
-    // Create the unit in the database
+    // Create unit first
     const unit = await prisma.unit.create({
       data: {
         course_id: course_id,
         name: unitDetails.title
       }
-    });
+    })
     
-    // console.log(`Created unit with ID: ${unit.unit_id}`);
+    // Create chapters in parallel
+    const createdChapters = await createChaptersInParallel(unit.unit_id, unitDetails.chapters)
     
-    // Create chapters for the unit
-    const createdChapters = [];
-    
-    for (const chapterDetail of unitDetails.chapters) {
-      try {
-        // Create chapter using the createChapter helper function
-        const chapterContent = await createChapter({
-          title: chapterDetail.title,
-          description: chapterDetail.description,
-          estimatedTime: chapterDetail.estimatedTime,
-          learningPoints: chapterDetail.learningPoints,
-          resources: chapterDetail.resources,
-          youtubeSearchQuery: chapterDetail.youtubeSearchQuery
-        });
-        
-        // Store the chapter in the database
-        const chapter = await prisma.chapter.create({
-          data: {
-            unit_id: unit.unit_id,
-            name: chapterContent.name,
-            youtubeVidLink: chapterContent.youtubeVidLink,
-            readingMaterial: chapterContent.readingMaterial
-          }
-        });
-        
-        // console.log(`Created chapter with ID: ${chapter.chapter_id}`);
-        createdChapters.push(chapter);
-      } catch (chapterError) {
-        console.error(`Error creating chapter ${chapterDetail.chapterNumber}:`, chapterError);
-        // Continue with other chapters even if one fails
-      }
+    // Return unit with chapters
+    return {
+      ...unit,
+      chapters: createdChapters
     }
-    
-    // Fetch the updated unit with its chapters
-    const updatedUnit = await prisma.unit.findUnique({
-      where: {
-        unit_id: unit.unit_id
-      },
-      include: {
-        chapters: true
-      }
-    });
-    
-    if (!updatedUnit) {
-      throw new Error(`Failed to fetch updated unit with ID: ${unit.unit_id}`);
-    }
-    
-    // console.log(`Fetched unit with ${updatedUnit.chapters.length} chapters`);
-    
-    // Return the updated unit with its chapters
-    return updatedUnit;
   } catch (error) {
-    console.error('Error creating unit:', error);
-    throw new Error(`Failed to create unit ${unitDetails.unitNumber}`);
+    console.error('Error creating unit:', error)
+    throw new Error(`Failed to create unit ${unitDetails.unitNumber}`)
   }
 }

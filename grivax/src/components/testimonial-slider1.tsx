@@ -496,7 +496,7 @@ export function TestimonialSlider1({ testimonials }: TestimonialSlider1Props) {
                     animate="animate"
                     exit="exit"
                   >
-                    <IconComponent className="h-4 w-4" />
+                    {IconComponent ? <IconComponent className="h-4 w-4" /> : null}
                   </motion.div>
                 </motion.div>
 
@@ -525,7 +525,7 @@ export function TestimonialSlider1({ testimonials }: TestimonialSlider1Props) {
                     animate="animate"
                     exit="exit"
                   >
-                    <IconComponent className="h-4 w-4" />
+                    {IconComponent ? <IconComponent className="h-4 w-4" /> : null}
                     <span>{testimonial.achievement}</span>
                   </motion.div>
                 </motion.div>
