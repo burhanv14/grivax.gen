@@ -234,58 +234,6 @@ export default function GenerateCoursesPage({ params }: GenerateCoursesPageProps
           {error}
         </div>
       )}
-
-      <Separator className="my-12" />
-
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative w-full max-w-sm">
-          <Input
-            type="search"
-            placeholder="Search courses..."
-            className="pr-10 border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary/20 transition-all"
-          />
-          <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-muted-foreground" />
-        </div>
-        <Button variant="outline" size="sm" className="sm:ml-auto">
-          <Filter className="mr-2 h-4 w-4" />
-          Filters
-        </Button>
-      </div>
-
-      <Tabs defaultValue="all" className="mb-12">
-        <TabsList className="mb-6 bg-slate-100 dark:bg-slate-900 p-1 rounded-lg">
-          <TabsTrigger value="all" className="rounded-md">All Courses</TabsTrigger>
-          <TabsTrigger value="popular" className="rounded-md">Popular</TabsTrigger>
-          <TabsTrigger value="new" className="rounded-md">New</TabsTrigger>
-          <TabsTrigger value="beginner" className="rounded-md">Beginner</TabsTrigger>
-          <TabsTrigger value="advanced" className="rounded-md">Advanced</TabsTrigger>
-        </TabsList>
-        <TabsContent value="all">
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {/* Course cards will be populated here */}
-          </div>
-        </TabsContent>
-        <TabsContent value="popular">
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {/* Popular courses will be populated here */}
-          </div>
-        </TabsContent>
-        <TabsContent value="new">
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {/* New courses will be populated here */}
-          </div>
-        </TabsContent>
-        <TabsContent value="beginner">
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {/* Beginner courses will be populated here */}
-          </div>
-        </TabsContent>
-        <TabsContent value="advanced">
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {/* Advanced courses will be populated here */}
-          </div>
-        </TabsContent>
-      </Tabs>
     </div>
   )
 }

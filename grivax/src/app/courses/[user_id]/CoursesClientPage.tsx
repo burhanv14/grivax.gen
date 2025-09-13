@@ -2,13 +2,14 @@
 
 import type React from "react"
 
-import { Plus, RefreshCw } from "lucide-react"
+import { Plus, RefreshCw, Search, Filter } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { useEffect, useState, useRef } from "react"
 import Image from "next/image"
 import Loader from "@/components/loader"
+import { Input } from "@/components/ui/input"
 
 // Define the Course type
 interface Course {
@@ -40,6 +41,11 @@ export default function CoursesClientPage({ params }: { params: { user_id: strin
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
+  const [searchQuery, setSearchQuery] = useState("") // State for search query
+
+  const filteredCourses = userCourses.filter((course) =>
+    course.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   // Function to fetch courses with retry mechanism
   const fetchCourses = async (user_id: string, retryCount = 0): Promise<Course[]> => {
@@ -175,52 +181,23 @@ export default function CoursesClientPage({ params }: { params: { user_id: strin
       animate={{ opacity: 1 }}
       transition={{ duration: 0.6 }}
     >
-      <motion.div
-        className="mb-12 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.6, delay: 0.2 }}
-      >
-        <div className="space-y-2">
-          <motion.h1
-            className="font-poppins text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-          >
-            Your Learning Masterpieces
-          </motion.h1>
-          <motion.p
-            className="max-w-[700px] text-muted-foreground"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-          >
-            Discover your collection of exquisitely crafted AI-generated courses designed to transform your learning
-            experience.
-          </motion.p>
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative w-full max-w-sm">
+          <Input
+            type="search"
+            placeholder="Search courses..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pr-10 border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary/20 transition-all"
+          />
+          <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-muted-foreground" />
         </div>
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5, delay: 0.5 }}
-        >
-          <Button asChild className="sm:self-start group relative overflow-hidden" size="lg">
-            <Link href={`/generate-courses/${userId}`}>
-              <motion.span
-                className="absolute inset-0 w-full h-full bg-gradient-to-r from-primary/10 to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                whileHover={{ scale: 1.05 }}
-              />
-              <motion.div whileHover={{ rotate: 90 }} transition={{ type: "spring", stiffness: 300, damping: 20 }}>
-                <Plus className="mr-2 h-5 w-5" />
-              </motion.div>
-              <span>Create New Course</span>
-            </Link>
-          </Button>
-        </motion.div>
-      </motion.div>
+        <Button variant="outline" size="sm" className="sm:ml-auto">
+          <Filter className="mr-2 h-4 w-4" />
+          Filters
+        </Button>
+      </div>
 
-      {/* Courses Section */}
       <motion.section
         className="mb-12"
         initial={{ opacity: 0, y: 20 }}
@@ -243,7 +220,7 @@ export default function CoursesClientPage({ params }: { params: { user_id: strin
             transition={{ duration: 0.5, delay: 0.7 }}
           >
             <span className="text-md text-muted-foreground">
-              {userCourses.length} course{userCourses.length !== 1 ? "s" : ""}
+              {filteredCourses.length} course{filteredCourses.length !== 1 ? "s" : ""}
             </span>
             <Button 
               variant="outline" 
@@ -257,14 +234,14 @@ export default function CoursesClientPage({ params }: { params: { user_id: strin
           </motion.div>
         </div>
 
-        {userCourses.length > 0 ? (
+        {filteredCourses.length > 0 ? (
           <motion.div
             className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.8 }}
           >
-            {userCourses.map((course, index) => (
+            {filteredCourses.map((course, index) => (
               <CourseCard key={course.course_id} course={course} userId={userId} index={index} />
             ))}
           </motion.div>
@@ -434,9 +411,9 @@ const CourseCard = ({ course, userId, index }: { course: Course; userId: string;
                 className="absolute inset-0"
                 style={{
                   background: `linear-gradient(${isHovered ? 225 : 180}deg, 
-                    rgba(var(--primary-rgb), ${isHovered ? 0.7 : 0.5}) 0%, 
+                    rgba(var(--primary), ${isHovered ? 0.7 : 0.5}) 0%, 
                     transparent 70%, 
-                    rgba(var(--primary-rgb), ${isHovered ? 0.3 : 0.2}) 100%)`,
+                    rgba(var(--primary), ${isHovered ? 0.3 : 0.2}) 100%)`,
                   mixBlendMode: "soft-light",
                 }}
                 animate={{
@@ -491,7 +468,7 @@ const CourseCard = ({ course, userId, index }: { course: Course; userId: string;
                   damping: 20,
                 }}
               >
-                <h3 className="font-bold text-md text-white drop-shadow-md line-clamp-2 bg-pink-200 text-black dark:text-white  dark:bg-black rounded-lg py-1 px-2">{course.title}</h3>
+                <h3 className="font-bold text-md text-white drop-shadow-md line-clamp-2 bg-pink-200 dark:text-white dark:bg-black rounded-lg py-1 px-2">{course.title}</h3>
                 <motion.div
                   className="h-0.5 bg-white/70 mt-2 w-0"
                   animate={{
