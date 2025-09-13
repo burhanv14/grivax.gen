@@ -27,12 +27,14 @@ export default function PremiumChatInterface({ onClose }: ChatInterfaceProps) {
   const [expanded, setExpanded] = useState(true)
   const [typingText, setTypingText] = useState("")
   const [isTyping, setIsTyping] = useState(false)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+
   const inputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const messagesContainerRef = useRef<HTMLDivElement>(null)
 
   // Generate unique ID for messages
-  const generateId = () => `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+  const generateId = () =>
+    `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
 
   useEffect(() => {
     // Add welcome message with typing effect
@@ -53,8 +55,9 @@ export default function PremiumChatInterface({ onClose }: ChatInterfaceProps) {
   }, [])
 
   useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" })
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop =
+        messagesContainerRef.current.scrollHeight
     }
   }, [messages, typingText])
 
@@ -129,7 +132,9 @@ export default function PremiumChatInterface({ onClose }: ChatInterfaceProps) {
       ref={containerRef}
       className={cn(
         "fixed bottom-8 right-8 z-50 transition-all duration-500 ease-in-out",
-        expanded ? "w-[450px] max-w-[90vw] h-[600px] max-h-[80vh]" : "w-16 h-16",
+        expanded
+          ? "w-[450px] max-w-[90vw] h-[600px] max-h-[80vh]"
+          : "w-16 h-16",
       )}
     >
       <AnimatePresence>
@@ -184,7 +189,10 @@ export default function PremiumChatInterface({ onClose }: ChatInterfaceProps) {
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-gradient-to-b from-background to-background/80 dark:from-background dark:to-background/90">
+            <div
+              ref={messagesContainerRef}
+              className="flex-1 overflow-y-auto p-6 space-y-6 bg-gradient-to-b from-background to-background/80 dark:from-background dark:to-background/90"
+            >
               <AnimatePresence>
                 {messages.map((message) => (
                   <motion.div
@@ -264,11 +272,11 @@ export default function PremiumChatInterface({ onClose }: ChatInterfaceProps) {
                   animate={{ y: 0, opacity: 1 }}
                   className="flex justify-center"
                 >
-                  <div className="bg-destructive/10 text-destructive rounded-xl p-3 text-sm shadow-md">{error}</div>
+                  <div className="bg-destructive/10 text-destructive rounded-xl p-3 text-sm shadow-md">
+                    {error}
+                  </div>
                 </motion.div>
               )}
-
-              <div ref={messagesEndRef} />
             </div>
 
             {/* Input */}
@@ -295,7 +303,8 @@ export default function PremiumChatInterface({ onClose }: ChatInterfaceProps) {
                   disabled={isLoading || !input.trim()}
                   className={cn(
                     "rounded-full w-12 h-12 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 transition-all duration-300 shadow-md",
-                    (!input.trim() || isLoading) && "opacity-50 cursor-not-allowed",
+                    (!input.trim() || isLoading) &&
+                      "opacity-50 cursor-not-allowed",
                   )}
                 >
                   <ArrowRight className="h-5 w-5" />
@@ -303,7 +312,9 @@ export default function PremiumChatInterface({ onClose }: ChatInterfaceProps) {
               </form>
 
               <div className="mt-2 text-center">
-                <p className="text-xs text-muted-foreground">&copy; {new Date().getFullYear()} Grivax</p>
+                <p className="text-xs text-muted-foreground">
+                  &copy; {new Date().getFullYear()} Grivax
+                </p>
               </div>
             </div>
           </motion.div>

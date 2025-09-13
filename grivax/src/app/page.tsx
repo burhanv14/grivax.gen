@@ -4,8 +4,6 @@ import { ArrowRight, BookOpen, Brain, Lightbulb, Sparkles, Star, Award, Heart } 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
-import { Button } from "../components/ui/button"
-import InteractiveCarousel from "../components/interactive-carousel"
 import { useEffect, useState, useRef, RefObject } from "react"
 import { motion } from "framer-motion"
 import { useTheme } from "next-themes"

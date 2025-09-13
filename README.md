@@ -131,3 +131,49 @@ This project is licensed under the **MIT License**.
 ## 📞 Contact
 For inquiries, open an issue or reach out via email at **22ucc123@lnmiit.ac.in**.
 
+---
+
+## ⚙️ Course Generation Progress Tracking
+
+Real-time (near) progress for course material generation is exposed through an enhanced status endpoint and a lightweight polling UI component.
+
+### Backend Flow
+1. User accepts a generated outline (`/api/generate-course/[user_id]/[course_id]` POST).
+2. Server triggers detailed content + unit & chapter creation **asynchronously** (background task) and returns immediately.
+3. While units/chapters are persisted, the client polls:
+   `/api/generate-course/[user_id]/[course_id]/status`.
+4. The status route derives progress directly from the database—no extra tables required.
+
+### Status Response Shape
+```
+{
+  status: 'generating' | 'completed',
+  course_id,
+  user_id,
+  progress: {
+    percent: number,
+    unitsCreated: number,
+    completedUnits: number,        // units with >=1 chapter
+    totalIntendedUnits: number,    // from original outline (modules length)
+    totalChapters: number,
+    chaptersPerUnit: [{ unit_id, chapters }]
+  }
+}
+```
+
+### Frontend Component
+`CourseGenerationProgress` (in `src/components/course-generation-progress.tsx`) handles polling every 2.5s, displays:
+- Overall percent bar
+- Per-unit badges (✓ when at least one chapter created)
+- Auto-calls `onComplete()` when status reaches `completed`.
+
+### Design Decisions
+- Chose polling over SSE to minimize infra changes and keep deploy targets (e.g. serverless) simple.
+- Progress inference avoids schema migration; can evolve later (e.g. add `generation_state` table if granular events needed).
+- Background generation isolates latency from user interaction and enables future cancellation patterns.
+
+### Extensibility Ideas
+- Swap polling for Server-Sent Events (SSE) if longer generation tasks appear.
+- Persist fine-grained events (chapter_started, unit_completed) for audit / analytics.
+- Add cancellation endpoint to abort long external API calls.
+

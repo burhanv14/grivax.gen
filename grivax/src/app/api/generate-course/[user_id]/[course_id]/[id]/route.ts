@@ -100,35 +100,37 @@ export async function POST(
       })
     }
 
-    // **OPTIMIZATION 2: Parallel unit creation with batch processing**
-    const createdUnits = await createUnitsInParallel(course.course_id, detailedCourseContent.units)
+    // ASYNC GENERATION STRATEGY: Return immediately & generate units/channels in background.
+    // Frontend will poll enhanced status endpoint for progress.
 
-    // **OPTIMIZATION 3: Fire-and-forget status update**
-    const baseUrl = process.env.BASE_URL
-    if (baseUrl) {
-      const statusEndpoint = `${baseUrl}/api/generate-course/${params.user_id}/${params.course_id}/status`
-      // Don't await this - let it run in background
-      fetch(statusEndpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: 'Course generation completed',
-          course_id: params.course_id,
-          user_id: params.user_id
-        }),
-      }).catch(error => {
-        console.error('Error sending acknowledgment to status endpoint:', error)
-      })
-    }
+    ;(async () => {
+      try {
+        await createUnitsInParallel(course.course_id, detailedCourseContent.units, {
+          onUnitCreated: async (unitIndex, unitTitle) => {
+            // Could log or update progress fields if desired
+          },
+          onError: (err) => console.error('Async generation error:', err)
+        })
+
+        // Optionally notify status endpoint (fire-and-forget) when done
+        const baseUrl = process.env.BASE_URL
+        if (baseUrl) {
+          const statusEndpoint = `${baseUrl}/api/generate-course/${params.user_id}/${params.course_id}/status`
+          fetch(statusEndpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: 'Course generation completed', course_id: params.course_id, user_id: params.user_id }) }).catch(e => console.error('Status notify failed', e))
+        }
+      } catch (err) {
+        console.error('Background generation failed:', err)
+      }
+    })()
 
     return NextResponse.json({
       success: true,
-      message: 'Course details generated successfully',
+      message: 'Course details generation started',
       id: params.id,
       course_id: params.course_id,
       user_id: params.user_id,
       courseDetails: COURSE_DETAILS,
-      createdUnits
+      started: true
     })
   } catch (error) {
     console.error('Error processing acknowledgment:', error)
@@ -139,19 +141,26 @@ export async function POST(
 /**
  * **OPTIMIZATION 4: Batch processing for units with controlled concurrency**
  */
-async function createUnitsInParallel(course_id: string, units: any[]) {
+async function createUnitsInParallel(course_id: string, units: any[], hooks?: { onUnitCreated?: (unitIndex: number, unitTitle: string) => Promise<void> | void; onError?: (error: any) => void }) {
   const BATCH_SIZE = 3 // Process 3 units at a time to avoid overwhelming APIs
   const createdUnits = []
 
   for (let i = 0; i < units.length; i += BATCH_SIZE) {
     const batch = units.slice(i, i + BATCH_SIZE)
     
-    const batchPromises = batch.map(unit => 
-      createUnit(course_id, unit).catch(error => {
+    const batchPromises = batch.map(async (unit) => {
+      try {
+        const created = await createUnit(course_id, unit)
+        if (hooks?.onUnitCreated) {
+          await hooks.onUnitCreated(unit.unitNumber, unit.title)
+        }
+        return created
+      } catch (error) {
         console.error(`Error creating unit ${unit.unitNumber}:`, error)
-        return null // Return null for failed units
-      })
-    )
+        hooks?.onError?.(error)
+        return null
+      }
+    })
 
     const batchResults = await Promise.all(batchPromises)
     createdUnits.push(...batchResults.filter(result => result !== null))
