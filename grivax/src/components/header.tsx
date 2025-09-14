@@ -69,7 +69,7 @@ export default function Header() {
       name: "Courses",
       href: isAuthenticated && userId ? `/courses/${userId}` : "/login",
     },
-    { name: "Assessments", href: `/assessments/${userId}` },
+    { name: "Assessments", href: isAuthenticated ? "/assessments" : "/login" },
     { name: "Dashboard", href: `/dashboard/${userId}` },
   ]
 

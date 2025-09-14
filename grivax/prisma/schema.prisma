@@ -14,14 +14,15 @@ datasource db {
 }
 
 model User {
-  user_id   String      @id @default(cuid()) 
-  email     String      @unique
-  name      String?
-  password  String
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-  courses   Course[]
-  genCourses GenCourse[]
+  user_id     String        @id @default(cuid()) 
+  email       String        @unique
+  name        String?
+  password    String
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  courses     Course[]
+  genCourses  GenCourse[]
+  quizAttempts QuizAttempt[]
 }
 
 model Course {
@@ -32,9 +33,35 @@ model Course {
   image     String
   progress  Int      @default(0)
   units     Unit[]
+  quiz      Quiz?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   user      User     @relation(fields: [user_id], references: [user_id])
+}
+
+model Quiz {
+  quiz_id   String        @id @default(cuid())
+  course_id String        @unique
+  questions Json
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  course    Course        @relation(fields: [course_id], references: [course_id])
+  attempts  QuizAttempt[]
+}
+
+model QuizAttempt {
+  attempt_id    String   @id @default(cuid())
+  quiz_id       String
+  user_id       String
+  answers       Json     // Array of user's selected answers
+  score         Int      // Percentage score (0-100)
+  correctCount  Int      // Number of correct answers
+  totalQuestions Int     // Total number of questions
+  completedAt   DateTime @default(now())
+  quiz          Quiz     @relation(fields: [quiz_id], references: [quiz_id])
+  user          User     @relation(fields: [user_id], references: [user_id])
+  
+  @@unique([quiz_id, user_id]) // Ensure one attempt per user per quiz
 }
 
 model Unit {
