@@ -24,6 +24,7 @@ model User {
   courses     Course[]
   genCourses  GenCourse[]
   quizAttempts QuizAttempt[]
+  testAttempts TestAttempt[]
 }
 
 model Course {
@@ -72,6 +73,7 @@ model Unit {
   progress  Int       @default(0)
   course    Course    @relation(fields: [course_id], references: [course_id])
   chapters  Chapter[]
+  test      Test?
 
   @@index([course_id])
 }
@@ -98,4 +100,30 @@ model GenCourse {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   user        User     @relation(fields: [user_id], references: [user_id])
+}
+
+model Test {
+  test_id     String        @id @default(cuid())
+  unit_id     String        @unique
+  questions   Json          // Array of flashcard questions
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  unit        Unit          @relation(fields: [unit_id], references: [unit_id])
+  attempts    TestAttempt[]
+}
+
+model TestAttempt {
+  attempt_id    String   @id @default(cuid())
+  test_id       String
+  user_id       String
+  answers       Json     // Array of user's selected answers
+  score         Int      // Percentage score (0-100)
+  correctCount  Int      // Number of correct answers
+  totalQuestions Int     // Total number of questions
+  completedAt   DateTime @default(now())
+  attemptCount  Int      @default(1) // Track the number of attempts
+  test          Test     @relation(fields: [test_id], references: [test_id])
+  user          User     @relation(fields: [user_id], references: [user_id])
+  
+  @@unique([test_id, user_id]) // Ensure one attempt per user per test
 }

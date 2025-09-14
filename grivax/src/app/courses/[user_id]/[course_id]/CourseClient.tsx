@@ -15,6 +15,7 @@ import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import CourseSidebar from "@/components/course-sidebar"
 import { MarkdownContent } from "@/components/MarkdownContent"
+import UnitTest from "@/components/unit-test"
 
 // Define interfaces for the course data structure
 interface Chapter {
@@ -33,6 +34,10 @@ interface Unit {
   course_id: string
   chapters: Chapter[]
   progress: number
+  test?: {
+    test_id: string
+    questions: any[]
+  }
 }
 
 interface Course {
@@ -61,6 +66,7 @@ export default function CourseClient({
   const [isMobileView, setIsMobileView] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [showConfetti, setShowConfetti] = useState(false)
+  const [activeUnitTest, setActiveUnitTest] = useState<string | null>(null) // State for active unit test
   const { scrollYProgress } = useScroll()
   const opacity = useTransform(scrollYProgress, [0, 0.2], [1, 0])
   const scale = useTransform(scrollYProgress, [0, 0.2], [1, 0.8])
@@ -74,6 +80,11 @@ export default function CourseClient({
     acc + unit.chapters.filter(ch => ch.isCompleted).length, 0
   )
   const progressPercentage = Math.round((completedChapters / totalChapters) * 100)
+
+  // Check if all chapters in a unit are completed
+  const areAllChaptersCompleted = (unit: Unit) => {
+    return unit.chapters.every(chapter => chapter.isCompleted)
+  }
 
   // Show celebration animation
   const showCelebration = () => {
@@ -172,6 +183,7 @@ export default function CourseClient({
   const setActiveChapter = (unitIndex: number, chapterIndex: number) => {
     setActiveUnitIndex(unitIndex)
     setActiveChapterIndex(chapterIndex)
+    setActiveUnitTest(null) // Reset unit test when navigating to a chapter
 
     // If we're on mobile, close the sidebar
     if (isMobileView) {
@@ -338,6 +350,8 @@ export default function CourseClient({
                         setActiveChapter={setActiveChapter}
                         totalChapters={totalChapters}
                         progressPercentage={progressPercentage}
+                        setActiveUnitTest={setActiveUnitTest}
+                        activeUnitTestId={activeUnitTest}
                       />
                     ) : (
                       <div className="p-4">Loading course content...</div>
@@ -377,6 +391,8 @@ export default function CourseClient({
                   setActiveChapter={setActiveChapter}
                   totalChapters={totalChapters}
                   progressPercentage={progressPercentage}
+                  setActiveUnitTest={setActiveUnitTest}
+                  activeUnitTestId={activeUnitTest}
                 />
               ) : (
                 <div className="p-4">Loading course content...</div>
@@ -411,6 +427,53 @@ export default function CourseClient({
                   <div className="text-center">
                     <h2 className="text-2xl font-bold">Loading course...</h2>
                     <p className="text-muted-foreground mt-2">Please wait while we load the course content</p>
+                  </div>
+                </motion.div>
+              ) : activeUnitTest ? (
+                // Render Unit Test Component
+                <motion.div
+                  className="space-y-6"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <div className="container pt-20">
+                    <div className="space-y-4 mb-6">
+                      <Button
+                        variant="outline"
+                        onClick={() => setActiveUnitTest(null)}
+                        className="flex items-center gap-2"
+                      >
+                        <ArrowLeft className="h-4 w-4" />
+                        Back to Course
+                      </Button>
+                    </div>
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.6, duration: 0.5 }}
+                      whileHover={{
+                        scale: 1.01,
+                        boxShadow: "0 5px 20px rgba(0, 0, 0, 0.08)",
+                      }}
+                      className="p-6 bg-card rounded-lg border shadow-sm transition-all duration-300"
+                    >
+                      <motion.h3
+                        className="text-xl font-semibold mb-4 flex items-center gap-2"
+                        whileHover={{ scale: 1.02, color: "var(--primary)" }}
+                        transition={{ type: "spring", stiffness: 500, damping: 10 }}
+                      >
+                        <CheckCircle2 className="h-5 w-5 text-primary" />
+                        Unit Test
+                      </motion.h3>
+                      <Separator className="my-4" />
+                      <UnitTest
+                        unitId={activeUnitTest}
+                        userId={userId}
+                        unitName={course.units.find(u => u.unit_id === activeUnitTest)?.name || "Unit"}
+                        allChaptersCompleted={course.units.find(u => u.unit_id === activeUnitTest)?.chapters.every(ch => ch.isCompleted) || false}
+                      />
+                    </motion.div>
                   </div>
                 </motion.div>
               ) : activeChapter ? (
@@ -593,6 +656,8 @@ export default function CourseClient({
                       )}
                     </motion.div>
                   </motion.div>
+
+
 
                   {/* Update progress display */}
                   <motion.div

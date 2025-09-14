@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 // Define interfaces for the course data structure
 interface Chapter {
@@ -24,6 +25,10 @@ interface Unit {
   name: string
   course_id: string
   chapters: Chapter[]
+  test?: {
+    test_id: string
+    questions: any[]
+  }
 }
 
 interface Course {
@@ -42,6 +47,8 @@ interface CourseSidebarProps {
   setActiveChapter: (unitIndex: number, chapterIndex: number) => void
   totalChapters: number
   progressPercentage: number
+  setActiveUnitTest: (unitId: string | null) => void
+  activeUnitTestId: string | null
 }
 
 export default function CourseSidebar({
@@ -53,6 +60,8 @@ export default function CourseSidebar({
   setActiveChapter,
   totalChapters,
   progressPercentage,
+  setActiveUnitTest,
+  activeUnitTestId,
 }: CourseSidebarProps) {
   // Animation states
   const [hoveredUnit, setHoveredUnit] = useState<number | null>(null)
@@ -338,8 +347,9 @@ export default function CourseSidebar({
                           exit="closed"
                         >
                           {unit.chapters.map((chapter, chapterIndex) => {
-                            const isActive = activeUnitIndex === unitIndex && activeChapterIndex === chapterIndex
-                            const wasActive = lastActiveUnit === unitIndex && lastActiveChapter === chapterIndex
+                            // If a unit test is active, don't highlight any chapter
+                            const isActive = !activeUnitTestId && activeUnitIndex === unitIndex && activeChapterIndex === chapterIndex
+                            const wasActive = !activeUnitTestId && lastActiveUnit === unitIndex && lastActiveChapter === chapterIndex
                             const isHovered =
                               hoveredChapter?.unit === unitIndex && hoveredChapter?.chapter === chapterIndex
 
@@ -433,6 +443,84 @@ export default function CourseSidebar({
                               </motion.li>
                             )
                           })}
+                          {/* Add Unit Test Button */}
+                          <motion.li
+                            key={`unit-test-${unit.unit_id}`}
+                            className="mt-2"
+                            variants={{
+                              open: {
+                                x: 0,
+                                opacity: 1,
+                                transition: {
+                                  type: "spring",
+                                  stiffness: 400,
+                                  damping: 20,
+                                },
+                              },
+                              closed: {
+                                x: -20,
+                                opacity: 0,
+                                transition: {
+                                  duration: 0.2,
+                                },
+                              },
+                            }}
+                            layout
+                          >
+                            <motion.div
+                              whileHover={{ x: 5 }}
+                              transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                            >
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      className={`w-full justify-start px-10 py-2 h-auto text-left transition-all duration-300 ${
+                                        activeUnitTestId === unit.unit_id
+                                          ? "bg-primary/10 text-primary font-medium"
+                                          : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                                      }`}
+                                      disabled={!unit.chapters.every((chapter) => chapter.isCompleted)}
+                                      onClick={() => {
+                                        if (unit.chapters.every((chapter) => chapter.isCompleted)) {
+                                          setActiveUnitTest(unit.unit_id);
+                                        }
+                                      }}
+                                    >
+                                      <div className="flex items-center gap-2 w-full">
+                                        <motion.div
+                                          className={`h-2 w-2 rounded-full ${
+                                            activeUnitTestId === unit.unit_id
+                                              ? "bg-primary"
+                                              : "bg-muted-foreground/40"
+                                          }`}
+                                          animate={{
+                                            scale: activeUnitTestId === unit.unit_id ? [1, 1.5, 1] : 1,
+                                            backgroundColor: activeUnitTestId === unit.unit_id
+                                              ? "var(--primary)"
+                                              : "rgba(var(--muted-foreground), 0.4)",
+                                          }}
+                                          transition={{
+                                            duration: activeUnitTestId === unit.unit_id ? 0.5 : 0,
+                                            ease: "easeInOut",
+                                          }}
+                                        />
+                                        <span className="text-sm truncate">Unit Test</span>
+                                      </div>
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>
+                                      {unit.chapters.every((chapter) => chapter.isCompleted)
+                                        ? "Take Unit Test"
+                                        : "Complete all chapters to unlock"}
+                                    </p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </motion.div>
+                          </motion.li>
                         </motion.ul>
                       </motion.div>
                     </AnimatePresence>

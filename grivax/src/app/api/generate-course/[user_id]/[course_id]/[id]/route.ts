@@ -493,16 +493,149 @@ async function createUnit(course_id: string, unitDetails: {
       }
     })
     
-    // Create chapters in parallel
-    const createdChapters = await createChaptersInParallel(unit.unit_id, unitDetails.chapters)
+    // Create chapters and test in parallel
+    const [createdChapters, test] = await Promise.all([
+      createChaptersInParallel(unit.unit_id, unitDetails.chapters),
+      generateUnitTest(unit.unit_id, unitDetails)
+    ])
     
-    // Return unit with chapters
+    // Return unit with chapters and test
     return {
       ...unit,
-      chapters: createdChapters
+      chapters: createdChapters,
+      test: test
     }
   } catch (error) {
     console.error('Error creating unit:', error)
     throw new Error(`Failed to create unit ${unitDetails.unitNumber}`)
   }
+}
+
+/**
+ * Generate flashcard test for a unit
+ */
+async function generateUnitTest(unit_id: string, unitDetails: any) {
+  try {
+    const prompt = `You are an expert educator creating flashcard questions for a unit test. 
+
+Unit: ${unitDetails.title}
+Description: ${unitDetails.description}
+
+Chapters in this unit:
+${unitDetails.chapters.map((chapter: any, index: number) => 
+  `${index + 1}. ${chapter.title} - ${chapter.description}`
+).join('\n')}
+
+Create 5-7 flashcard questions that test understanding of the key concepts from this unit. Each question should be:
+- A clear, concise question
+- Have 4 multiple choice options (A, B, C, D)
+- Include the correct answer
+- Cover different aspects of the unit content
+
+Return ONLY valid JSON in this exact format [below is just a skeleton of the format]:
+{
+  "questions": [
+    {
+      "id": 1,
+      "question": "What is the main concept?",
+      "options": {
+        "A": "Option A",
+        "B": "Option B", 
+        "C": "Option C",
+        "D": "Option D"
+      },
+      "correctAnswer": "A",
+      "explanation": "Brief explanation of why this is correct"
+    }
+  ]
+}`
+
+    const response = await anthropic.messages.create({
+      model: 'claude-3-haiku-20240307',
+      max_tokens: 2000,
+      messages: [
+        {
+          role: 'user',
+          content: prompt
+        }
+      ]
+    })
+
+    const content = response.content[0]
+    let questions = []
+    
+    if (content.type === 'text') {
+      try {
+        const parsed = JSON.parse(content.text)
+        questions = parsed.questions || []
+      } catch (parseError) {
+        console.error('Error parsing AI response:', parseError)
+        questions = createFallbackTestQuestions(unitDetails.title)
+      }
+    } else {
+      questions = createFallbackTestQuestions(unitDetails.title)
+    }
+
+    // Create test in database
+    const test = await prisma.test.create({
+      data: {
+        unit_id: unit_id,
+        questions: questions
+      }
+    })
+
+    return test
+
+  } catch (error) {
+    console.error('Error generating unit test:', error)
+    // Create fallback test
+    const questions = createFallbackTestQuestions(unitDetails.title)
+    return await prisma.test.create({
+      data: {
+        unit_id: unit_id,
+        questions: questions
+      }
+    })
+  }
+}
+
+function createFallbackTestQuestions(unitTitle: string) {
+  return [
+    {
+      id: 1,
+      question: `What is the main topic covered in ${unitTitle}?`,
+      options: {
+        A: "Basic concepts",
+        B: "Advanced techniques", 
+        C: "Historical background",
+        D: "All of the above"
+      },
+      correctAnswer: "D",
+      explanation: "This unit covers multiple aspects of the topic."
+    },
+    {
+      id: 2,
+      question: `Which of the following is most important in ${unitTitle}?`,
+      options: {
+        A: "Memorization",
+        B: "Understanding concepts",
+        C: "Speed of completion",
+        D: "Following instructions"
+      },
+      correctAnswer: "B",
+      explanation: "Understanding the underlying concepts is most important for learning."
+    },
+    {
+      id: 3,
+      question: `What should you focus on when studying ${unitTitle}?`,
+      options: {
+        A: "Only the main points",
+        B: "Only the details",
+        C: "Both main points and details",
+        D: "Only practical applications"
+      },
+      correctAnswer: "C",
+      explanation: "A comprehensive understanding requires both main concepts and supporting details."
+    }
+  ]
 }
