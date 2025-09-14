@@ -18,6 +18,7 @@ declare module "next-auth" {
       name?: string | null;
       email?: string | null;
       image?: string | null;
+      role?: string;
     }
   }
 }
@@ -96,6 +97,10 @@ export const authConfig: NextAuthOptions = {
             // Generate a unique user_id
             const user_id = crypto.randomBytes(5).toString("hex"); // 10-character hex string
             
+            // Get role from sessionStorage (this will be handled on the client side)
+            // For now, default to STUDENT - we'll handle role selection in a separate flow
+            const role = "STUDENT";
+            
             // Create new user in database
             await prisma.user.create({
               data: {
@@ -103,6 +108,7 @@ export const authConfig: NextAuthOptions = {
                 email: user.email as string,
                 name: user.name as string,
                 password: "", // No password for OAuth users
+                role: role,
               },
             });
           }
@@ -118,7 +124,7 @@ export const authConfig: NextAuthOptions = {
       return true;
     },
     async session({ session, token }) {
-      // Add user_id to the session if available
+      // Add user_id and role to the session if available
       if (session.user) {
         const dbUser = await prisma.user.findUnique({
           where: { email: session.user.email as string },
@@ -126,6 +132,7 @@ export const authConfig: NextAuthOptions = {
         
         if (dbUser) {
           session.user.id = dbUser.user_id;
+          session.user.role = dbUser.role;
         }
       }
       
@@ -164,6 +171,7 @@ export type SessionUser = {
   name?: string | null
   email?: string | null
   image?: string | null
+  role?: string
 }
 
 export const getUserSession = async (): Promise<SessionUser | null> => {

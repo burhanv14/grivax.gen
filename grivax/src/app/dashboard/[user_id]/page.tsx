@@ -1,4 +1,4 @@
-import { BookOpen, GraduationCap, LineChart, Trophy } from "lucide-react"
+import { BookOpen, GraduationCap, LineChart, Trophy, User } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import EnrolledCourses from "@/components/enrolled-courses"
 import { getServerSession } from "next-auth"
@@ -90,8 +90,16 @@ export default async function DashboardPage({
   return (
     <div className="container py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold">Welcome back, {dbUser.name || 'Learner'}!</h1>
-        <p className="text-muted-foreground">Track your learning progress and achievements</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Welcome back, {dbUser.name || 'Learner'}!</h1>
+            <p className="text-muted-foreground">Track your learning progress and achievements</p>
+          </div>
+          <div className="flex items-center space-x-2 px-3 py-2 rounded-lg bg-primary/10 text-primary">
+            <User className="h-4 w-4" />
+            <span className="text-sm font-medium capitalize">{dbUser.role?.toLowerCase() || 'Student'}</span>
+          </div>
+        </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">

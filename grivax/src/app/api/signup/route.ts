@@ -6,7 +6,12 @@ import crypto from "crypto";
 
 export async function POST(request: Request) {
   try {
-    const { name, email, password, oauthProvider } = await request.json();
+    const { name, email, password, oauthProvider, role } = await request.json();
+
+    // Validate role
+    if (role && !["STUDENT", "TEACHER"].includes(role)) {
+      return NextResponse.json({ error: "Invalid role. Must be STUDENT or TEACHER" }, { status: 400 });
+    }
 
     // Check if the user already exists
     const existingUser = await prisma.user.findUnique({
@@ -27,6 +32,7 @@ export async function POST(request: Request) {
           email,
           name,
           password: "", // No password for OAuth users
+          role: role || "STUDENT", // Default to STUDENT if no role provided
         },
       });
     } else {
@@ -38,6 +44,7 @@ export async function POST(request: Request) {
           email,
           name,
           password: hashedPassword,
+          role: role || "STUDENT", // Default to STUDENT if no role provided
         },
       });
     }

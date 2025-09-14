@@ -5,7 +5,7 @@ import type React from "react"
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
-import { ArrowLeft, ChevronRight, Github, AlertCircle, Eye, EyeOff, Loader2, Check } from "lucide-react"
+import { ArrowLeft, ChevronRight, Github, AlertCircle, Eye, EyeOff, Loader2, Check, GraduationCap, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Progress } from "@/components/ui/progress"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import Image from "next/image"
 import ReCaptchaElement from "@/components/ReCaptchaElement"
 import ReCaptchaProvider from "@/components/ReCaptchaProvider"
@@ -29,6 +30,7 @@ export default function SignupPage() {
   const [password, setPassword] = useState<string>("")
   const [passwordStrength, setPasswordStrength] = useState<number>(0)
   const [authMethod, setAuthMethod] = useState<string | null>(null)
+  const [selectedRole, setSelectedRole] = useState<string>("STUDENT")
   const router = useRouter()
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get("callbackUrl") || "/"
@@ -77,16 +79,20 @@ export default function SignupPage() {
       setIsLoading(true)
       setAuthMethod("google")
       setError(null)
+      
+      // Store role in sessionStorage for OAuth callback
+      sessionStorage.setItem('selectedRole', selectedRole)
+      
       const result = await signIn("google", {
-        callbackUrl,
+        callbackUrl: "/select-role",
         redirect: false,
       })
       if (result?.error) {
         setError("Failed to sign up with Google. Please try again.")
       } else if (result?.ok) {
-        setSuccess("Successfully signed up with Google!")
+        setSuccess("Successfully signed up with Google! Please select your role...")
         setTimeout(() => {
-          router.push(callbackUrl)
+          router.push("/select-role")
         }, 500)
       }
     } catch (error) {
@@ -103,16 +109,20 @@ export default function SignupPage() {
       setIsLoading(true)
       setAuthMethod("github")
       setError(null)
+      
+      // Store role in sessionStorage for OAuth callback
+      sessionStorage.setItem('selectedRole', selectedRole)
+      
       const result = await signIn("github", {
-        callbackUrl,
+        callbackUrl: "/select-role",
         redirect: false,
       })
       if (result?.error) {
         setError("Failed to sign up with GitHub. Please try again.")
       } else if (result?.ok) {
-        setSuccess("Successfully signed up with GitHub!")
+        setSuccess("Successfully signed up with GitHub! Please select your role...")
         setTimeout(() => {
-          router.push(callbackUrl)
+          router.push("/select-role")
         }, 500)
       }
     } catch (error) {
@@ -161,7 +171,7 @@ export default function SignupPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email, password, role: selectedRole }),
       })
 
       const data = await res.json()
@@ -347,6 +357,42 @@ export default function SignupPage() {
                       </div>
                     </div>
                   )}
+                </div>
+
+                <div className="space-y-3">
+                  <Label className="text-sm font-medium">I am a</Label>
+                  <RadioGroup
+                    value={selectedRole}
+                    onValueChange={setSelectedRole}
+                    className="grid grid-cols-2 gap-4"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="STUDENT" id="student" />
+                      <Label
+                        htmlFor="student"
+                        className="flex items-center space-x-2 cursor-pointer flex-1 p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+                      >
+                        <GraduationCap className="h-4 w-4" />
+                        <div>
+                          <div className="font-medium">Student</div>
+                          <div className="text-xs text-muted-foreground">Learn and take courses</div>
+                        </div>
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="TEACHER" id="teacher" />
+                      <Label
+                        htmlFor="teacher"
+                        className="flex items-center space-x-2 cursor-pointer flex-1 p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+                      >
+                        <Users className="h-4 w-4" />
+                        <div>
+                          <div className="font-medium">Teacher</div>
+                          <div className="text-xs text-muted-foreground">Create and manage courses</div>
+                        </div>
+                      </Label>
+                    </div>
+                  </RadioGroup>
                 </div>
 
                 <div className="flex items-start space-x-2">
