@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { Plus, RefreshCw, Search, Filter } from "lucide-react"
+import { Plus, RefreshCw, Search, Filter, BookOpen, Users, Edit, Eye } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { motion } from "framer-motion"
@@ -10,6 +10,7 @@ import { useEffect, useState, useRef } from "react"
 import Image from "next/image"
 import Loader from "@/components/loader"
 import { Input } from "@/components/ui/input"
+import { useSession } from "next-auth/react"
 
 // Define the Course type
 interface Course {
@@ -20,6 +21,58 @@ interface Course {
   image: string
   createdAt: Date
   updatedAt: Date
+}
+
+// Define the PublicCourse type
+interface PublicCourse {
+  public_course_id: string
+  teacher_id: string
+  title: string
+  description?: string
+  image: string
+  isPublished: boolean
+  createdAt: Date
+  updatedAt: Date
+  teacher: {
+    user_id: string
+    name?: string
+    email: string
+  }
+  units: PublicUnit[]
+  enrollments: PublicCourseEnrollment[]
+  _count: {
+    enrollments: number
+  }
+}
+
+interface PublicUnit {
+  public_unit_id: string
+  public_course_id: string
+  name: string
+  order: number
+  chapters: PublicChapter[]
+}
+
+interface PublicChapter {
+  public_chapter_id: string
+  public_unit_id: string
+  name: string
+  youtubeVidLink: string
+  readingMaterial?: string
+  order: number
+}
+
+interface PublicCourseEnrollment {
+  enrollment_id: string
+  public_course_id: string
+  student_id: string
+  enrolledAt: Date
+  progress: number
+  student: {
+    user_id: string
+    name?: string
+    email: string
+  }
 }
 
 // Utility function to format course data consistently
@@ -36,14 +89,21 @@ const formatCourseData = (rawCourseData: any): Course => {
 }
 
 export default function CoursesClientPage({ params }: { params: { user_id: string } }) {
+  const { data: session } = useSession()
   const [userId, setUserId] = useState(params.user_id)
+  const [userRole, setUserRole] = useState<string>("STUDENT")
   const [userCourses, setUserCourses] = useState<Course[]>([])
+  const [publicCourses, setPublicCourses] = useState<PublicCourse[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
   const [searchQuery, setSearchQuery] = useState("") // State for search query
 
   const filteredCourses = userCourses.filter((course) =>
+    course.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredPublicCourses = publicCourses.filter((course) =>
     course.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -110,6 +170,48 @@ export default function CoursesClientPage({ params }: { params: { user_id: strin
     }
   }
 
+  // Function to fetch user role
+  const fetchUserRole = async (): Promise<string> => {
+    try {
+      const response = await fetch('/api/user', {
+        method: 'GET',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+        }
+      })
+      
+      if (response.ok) {
+        const userData = await response.json()
+        return userData.role || "STUDENT"
+      }
+      return "STUDENT"
+    } catch (error) {
+      console.error("Error fetching user role:", error)
+      return "STUDENT"
+    }
+  }
+
+  // Function to fetch public courses
+  const fetchPublicCourses = async (): Promise<PublicCourse[]> => {
+    try {
+      const response = await fetch('/api/public-courses', {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+        }
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        return data || []
+      }
+      return []
+    } catch (error) {
+      console.error("Error fetching public courses:", error)
+      return []
+    }
+  }
+
   // Function to refresh courses
   const refreshCourses = () => {
     setRefreshKey(prev => prev + 1)
@@ -125,17 +227,26 @@ export default function CoursesClientPage({ params }: { params: { user_id: strin
         const user_id = params.user_id
         setUserId(user_id)
 
-        // Fetch courses with retry mechanism
-        const formattedCourses = await fetchCourses(user_id)
+        // Fetch user role and courses in parallel
+        const [role, formattedCourses, publicCoursesData] = await Promise.all([
+          fetchUserRole(),
+          fetchCourses(user_id),
+          fetchPublicCourses()
+        ])
 
-        // Debug: Log the formatted courses
-        console.log("Formatted courses:", formattedCourses)
-
+        setUserRole(role)
         setUserCourses(formattedCourses)
+        setPublicCourses(publicCoursesData)
+
+        // Debug: Log the data
+        console.log("User role:", role)
+        console.log("Formatted courses:", formattedCourses)
+        console.log("Public courses:", publicCoursesData)
       } catch (error) {
         console.error("Error fetching data:", error)
         setError(error instanceof Error ? error.message : "An unknown error occurred")
         setUserCourses([])
+        setPublicCourses([])
       } finally {
         setIsLoading(false)
       }
@@ -198,67 +309,254 @@ export default function CoursesClientPage({ params }: { params: { user_id: strin
         </Button>
       </div>
 
-      <motion.section
-        className="mb-12"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.6 }}
-      >
-        <div className="flex items-center justify-between mb-8">
-          <motion.h2
-            className="text-2xl font-bold tracking-tight"
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.7 }}
+      {/* Teacher View */}
+      {userRole === "TEACHER" && (
+        <>
+          {/* Personal Courses Section */}
+          <motion.section
+            className="mb-12"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.6 }}
           >
-            My Courses
-          </motion.h2>
-          <motion.div
-            className="flex items-center gap-2"
-            initial={{ opacity: 0, x: 10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.7 }}
-          >
-            <span className="text-md text-muted-foreground">
-              {filteredCourses.length} course{filteredCourses.length !== 1 ? "s" : ""}
-            </span>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={refreshCourses}
-              className="ml-2"
-              title="Refresh courses"
-            >
-              <RefreshCw className="h-4 w-4" />
-            </Button>
-          </motion.div>
-        </div>
+            <div className="flex items-center justify-between mb-8">
+              <motion.h2
+                className="text-2xl font-bold tracking-tight"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.7 }}
+              >
+                My Personal Courses
+              </motion.h2>
+              <motion.div
+                className="flex items-center gap-2"
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.7 }}
+              >
+                <span className="text-md text-muted-foreground">
+                  {filteredCourses.length} course{filteredCourses.length !== 1 ? "s" : ""}
+                </span>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={refreshCourses}
+                  className="ml-2"
+                  title="Refresh courses"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </motion.div>
+            </div>
 
-        {/* Add the new course button here */}
-        <div className="flex justify-end mb-4">
-          <Button asChild size="lg" className="px-6">
-            <Link href={`/generate-courses/${userId}`}>
-              <Plus className="mr-2 h-5 w-5" />
-              <span>Create New Course</span>
-            </Link>
-          </Button>
-        </div>
+            <div className="flex justify-end mb-4">
+              <Button asChild size="lg" className="px-6">
+                <Link href={`/generate-courses/${userId}`}>
+                  <Plus className="mr-2 h-5 w-5" />
+                  <span>Create New Course</span>
+                </Link>
+              </Button>
+            </div>
 
-        {filteredCourses.length > 0 ? (
-          <motion.div
-            className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.8, delay: 0.8 }}
+            {filteredCourses.length > 0 ? (
+              <motion.div
+                className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.8, delay: 0.8 }}
+              >
+                {filteredCourses.map((course, index) => (
+                  <CourseCard key={course.course_id} course={course} userId={userId} index={index} />
+                ))}
+              </motion.div>
+            ) : (
+              <EmptyState userId={userId} />
+            )}
+          </motion.section>
+
+          {/* Public Courses Section */}
+          <motion.section
+            className="mb-12"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.8 }}
           >
-            {filteredCourses.map((course, index) => (
-              <CourseCard key={course.course_id} course={course} userId={userId} index={index} />
-            ))}
-          </motion.div>
-        ) : (
-          <EmptyState userId={userId} />
-        )}
-      </motion.section>
+            <div className="flex items-center justify-between mb-8">
+              <motion.h2
+                className="text-2xl font-bold tracking-tight"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.9 }}
+              >
+                My Public Courses
+              </motion.h2>
+              <motion.div
+                className="flex items-center gap-2"
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.9 }}
+              >
+                <span className="text-md text-muted-foreground">
+                  {filteredPublicCourses.length} course{filteredPublicCourses.length !== 1 ? "s" : ""}
+                </span>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={refreshCourses}
+                  className="ml-2"
+                  title="Refresh courses"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </motion.div>
+            </div>
+
+            <div className="flex justify-end mb-4">
+              <Button asChild size="lg" className="px-6">
+                <Link href={`/generate-public-course/${userId}`}>
+                  <Plus className="mr-2 h-5 w-5" />
+                  <span>Generate Public Course</span>
+                </Link>
+              </Button>
+            </div>
+
+            {filteredPublicCourses.length > 0 ? (
+              <motion.div
+                className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.8, delay: 1.0 }}
+              >
+                {filteredPublicCourses.map((course, index) => (
+                  <PublicCourseCard key={course.public_course_id} course={course} userId={userId} index={index} />
+                ))}
+              </motion.div>
+            ) : (
+              <EmptyPublicCourseState userId={userId} />
+            )}
+          </motion.section>
+        </>
+      )}
+
+      {/* Student View */}
+      {userRole === "STUDENT" && (
+        <>
+          {/* Personal Courses Section */}
+          <motion.section
+            className="mb-12"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.6 }}
+          >
+            <div className="flex items-center justify-between mb-8">
+              <motion.h2
+                className="text-2xl font-bold tracking-tight"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.7 }}
+              >
+                My Courses
+              </motion.h2>
+              <motion.div
+                className="flex items-center gap-2"
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.7 }}
+              >
+                <span className="text-md text-muted-foreground">
+                  {filteredCourses.length} course{filteredCourses.length !== 1 ? "s" : ""}
+                </span>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={refreshCourses}
+                  className="ml-2"
+                  title="Refresh courses"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </motion.div>
+            </div>
+
+            <div className="flex justify-end mb-4">
+              <Button asChild size="lg" className="px-6">
+                <Link href={`/generate-courses/${userId}`}>
+                  <Plus className="mr-2 h-5 w-5" />
+                  <span>Create New Course</span>
+                </Link>
+              </Button>
+            </div>
+
+            {filteredCourses.length > 0 ? (
+              <motion.div
+                className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.8, delay: 0.8 }}
+              >
+                {filteredCourses.map((course, index) => (
+                  <CourseCard key={course.course_id} course={course} userId={userId} index={index} />
+                ))}
+              </motion.div>
+            ) : (
+              <EmptyState userId={userId} />
+            )}
+          </motion.section>
+
+          {/* Available Public Courses Section */}
+          <motion.section
+            className="mb-12"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.8 }}
+          >
+            <div className="flex items-center justify-between mb-8">
+              <motion.h2
+                className="text-2xl font-bold tracking-tight"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.9 }}
+              >
+                Available Public Courses
+              </motion.h2>
+              <motion.div
+                className="flex items-center gap-2"
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.9 }}
+              >
+                <span className="text-md text-muted-foreground">
+                  {filteredPublicCourses.filter(c => c.isPublished).length} course{filteredPublicCourses.filter(c => c.isPublished).length !== 1 ? "s" : ""}
+                </span>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={refreshCourses}
+                  className="ml-2"
+                  title="Refresh courses"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </motion.div>
+            </div>
+
+            {filteredPublicCourses.filter(c => c.isPublished).length > 0 ? (
+              <motion.div
+                className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.8, delay: 1.0 }}
+              >
+                {filteredPublicCourses.filter(c => c.isPublished).map((course, index) => (
+                  <PublicCourseCard key={course.public_course_id} course={course} userId={userId} index={index} isStudentView={true} />
+                ))}
+              </motion.div>
+            ) : (
+              <EmptyPublicCourseState userId={userId} isStudentView={true} />
+            )}
+          </motion.section>
+        </>
+      )}
     </motion.div>
   )
 }
@@ -822,6 +1120,217 @@ const EmptyState = ({ userId }: { userId: string }) => {
           </Link>
         </Button>
       </motion.div>
+    </motion.div>
+  )
+}
+
+// PublicCourseCard component
+const PublicCourseCard = ({ 
+  course, 
+  userId, 
+  index, 
+  isStudentView = false 
+}: { 
+  course: PublicCourse; 
+  userId: string; 
+  index: number;
+  isStudentView?: boolean;
+}) => {
+  const [isHovered, setIsHovered] = useState(false)
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
+  const cardRef = useRef<HTMLDivElement>(null)
+
+  // Handle mouse movement for 3D effect
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (cardRef.current) {
+      const rect = cardRef.current.getBoundingClientRect()
+      const x = (e.clientX - rect.left) / rect.width
+      const y = (e.clientY - rect.top) / rect.height
+      setMousePosition({ x, y })
+    }
+  }
+
+  const totalChapters = course.units.reduce((total, unit) => total + unit.chapters.length, 0)
+
+  return (
+    <Link href={`/public-courses/${course.public_course_id}`} className="block h-full">
+      <motion.div
+        ref={cardRef}
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{
+          duration: 0.6,
+          delay: index * 0.1,
+          type: "spring",
+          stiffness: 100,
+          damping: 15,
+        }}
+        whileHover={{ scale: 1.02 }}
+        onHoverStart={() => setIsHovered(true)}
+        onHoverEnd={() => setIsHovered(false)}
+        onMouseMove={handleMouseMove}
+        className="h-full perspective-1000 group"
+      >
+        <motion.div
+          className="h-full relative preserve-3d rounded-xl overflow-hidden bg-white dark:bg-slate-800 shadow-lg border border-slate-200 dark:border-slate-700 transition-all duration-300 hover:shadow-xl hover:border-primary/20"
+          style={{
+            transform: isHovered
+              ? `rotateY(${(mousePosition.x - 0.5) * 10}deg) rotateX(${(mousePosition.y - 0.5) * -10}deg)`
+              : "rotateY(0deg) rotateX(0deg)",
+          }}
+        >
+          {/* Course Image */}
+          <div className="relative h-48 overflow-hidden">
+            <Image
+              src={course.image}
+              alt={course.title}
+              fill
+              className="object-cover transition-transform duration-300 group-hover:scale-105"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+            
+            {/* Status Badge */}
+            <div className="absolute top-3 right-3">
+              <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                course.isPublished 
+                  ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                  : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+              }`}>
+                {course.isPublished ? 'Published' : 'Draft'}
+              </span>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="absolute top-3 left-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              {!isStudentView && (
+                <Button size="sm" variant="secondary" className="mr-2">
+                  <Edit className="h-4 w-4" />
+                </Button>
+              )}
+              <Button size="sm" variant="secondary">
+                <Eye className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Course Content */}
+          <div className="p-6 flex flex-col h-full">
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2 line-clamp-2">
+                {course.title}
+              </h3>
+              
+              {course.description && (
+                <p className="text-sm text-slate-600 dark:text-slate-400 mb-4 line-clamp-2">
+                  {course.description}
+                </p>
+              )}
+
+              <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400 mb-4">
+                <div className="flex items-center gap-1">
+                  <BookOpen className="h-3 w-3" />
+                  <span>{course.units.length} units</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Users className="h-3 w-3" />
+                  <span>{course._count.enrollments} students</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Course Stats */}
+            <div className="mt-auto pt-4 border-t border-slate-200 dark:border-slate-700">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-slate-600 dark:text-slate-400">
+                  {totalChapters} chapters
+                </span>
+                <span className="text-slate-500 dark:text-slate-500">
+                  by {course.teacher.name || course.teacher.email}
+                </span>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      </motion.div>
+    </Link>
+  )
+}
+
+// EmptyPublicCourseState component
+const EmptyPublicCourseState = ({ 
+  userId, 
+  isStudentView = false 
+}: { 
+  userId: string;
+  isStudentView?: boolean;
+}) => {
+  return (
+    <motion.div
+      className="text-center py-16"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6 }}
+    >
+      <motion.div
+        className="mx-auto w-24 h-24 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-6"
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+      >
+        <BookOpen className="h-12 w-12 text-slate-400" />
+      </motion.div>
+      
+      <motion.h3
+        className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-2"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5, delay: 0.3 }}
+      >
+        {isStudentView ? "No Public Courses Available" : "No Public Courses Yet"}
+      </motion.h3>
+      
+      <motion.p
+        className="text-slate-600 dark:text-slate-400 mb-8 max-w-md mx-auto"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5, delay: 0.4 }}
+      >
+        {isStudentView 
+          ? "There are no published public courses available for enrollment at the moment."
+          : "You haven't published any public courses yet. Create your first public course to share with students."
+        }
+      </motion.p>
+
+      {!isStudentView && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.5 }}
+        >
+          <Button asChild size="lg" className="px-8 relative overflow-hidden group">
+            <Link href={`/generate-public-course/${userId}`}>
+              <motion.span
+                className="absolute inset-0 w-full h-full bg-gradient-to-r from-primary/10 to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                whileHover={{ scale: 1.05 }}
+              />
+              <motion.div
+                animate={{
+                  rotate: [0, 90],
+                }}
+                transition={{
+                  duration: 0.3,
+                  repeat: 0,
+                  repeatType: "reverse",
+                }}
+                className="mr-2"
+              >
+                <Plus className="h-5 w-5" />
+              </motion.div>
+              <span>Generate Your First Public Course</span>
+            </Link>
+          </Button>
+        </motion.div>
+      )}
     </motion.div>
   )
 }
