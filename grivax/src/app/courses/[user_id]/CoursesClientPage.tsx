@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { Plus, RefreshCw, Search, Filter, BookOpen, Users, Edit, Eye } from "lucide-react"
+import { Plus, RefreshCw, Search, Filter, BookOpen, Users, Edit, Eye, CheckCircle, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { motion } from "framer-motion"
@@ -11,6 +11,7 @@ import Image from "next/image"
 import Loader from "@/components/loader"
 import { Input } from "@/components/ui/input"
 import { useSession } from "next-auth/react"
+import { toast } from "sonner"
 
 // Define the Course type
 interface Course {
@@ -94,10 +95,14 @@ export default function CoursesClientPage({ params }: { params: { user_id: strin
   const [userRole, setUserRole] = useState<string>("STUDENT")
   const [userCourses, setUserCourses] = useState<Course[]>([])
   const [publicCourses, setPublicCourses] = useState<PublicCourse[]>([])
+  const [enrolledCourses, setEnrolledCourses] = useState<PublicCourse[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
   const [searchQuery, setSearchQuery] = useState("") // State for search query
+  
+  // Debug flag - set to false in production
+  const DEBUG = process.env.NODE_ENV === 'development'
 
   const filteredCourses = userCourses.filter((course) =>
     course.title.toLowerCase().includes(searchQuery.toLowerCase())
@@ -106,6 +111,25 @@ export default function CoursesClientPage({ params }: { params: { user_id: strin
   const filteredPublicCourses = publicCourses.filter((course) =>
     course.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const filteredEnrolledCourses = enrolledCourses.filter((course) =>
+    course.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // For students, filter out enrolled courses from available public courses
+  const availablePublicCourses = userRole === "STUDENT" && !isLoading
+    ? filteredPublicCourses.filter(course => {
+        // Only show published courses for students
+        if (!course.isPublished) {
+          if (DEBUG) console.log(`Course ${course.title} is not published, skipping`);
+          return false;
+        }
+        
+        const isEnrolled = enrolledCourses.some(enrolled => enrolled.public_course_id === course.public_course_id);
+        if (DEBUG) console.log(`Course ${course.title} (${course.public_course_id}) - isEnrolled: ${isEnrolled}`);
+        return !isEnrolled;
+      })
+    : filteredPublicCourses;
 
   // Function to fetch courses with retry mechanism
   const fetchCourses = async (user_id: string, retryCount = 0): Promise<Course[]> => {
@@ -192,9 +216,20 @@ export default function CoursesClientPage({ params }: { params: { user_id: strin
   }
 
   // Function to fetch public courses
-  const fetchPublicCourses = async (): Promise<PublicCourse[]> => {
+  const fetchPublicCourses = async (userRole: string): Promise<PublicCourse[]> => {
     try {
-      const response = await fetch('/api/public-courses', {
+      let url = '/api/public-courses'
+      
+      // For students, only fetch published courses from all teachers
+      // For teachers, fetch all their courses (published and draft)
+      if (userRole === "STUDENT") {
+        url += '?published=true'
+      } else if (userRole === "TEACHER") {
+        // For teachers, we'll fetch their courses in the useEffect after we know the user role
+        url += `?teacher_id=${userId}`
+      }
+      
+      const response = await fetch(url, {
         cache: 'no-store',
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -203,11 +238,36 @@ export default function CoursesClientPage({ params }: { params: { user_id: strin
       
       if (response.ok) {
         const data = await response.json()
+        if (DEBUG) console.log(`Fetched ${data?.length || 0} public courses from ${url}`)
         return data || []
       }
+      console.error(`Failed to fetch public courses from ${url}:`, response.status, response.statusText)
       return []
     } catch (error) {
       console.error("Error fetching public courses:", error)
+      return []
+    }
+  }
+
+  // Function to fetch enrolled courses for students
+  const fetchEnrolledCourses = async (user_id: string): Promise<PublicCourse[]> => {
+    try {
+      const response = await fetch(`/api/students/${user_id}/enrolled-courses`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+        }
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        if (DEBUG) console.log(`Fetched ${data?.length || 0} enrolled courses for user ${user_id}`)
+        return data || []
+      }
+      console.error(`Failed to fetch enrolled courses for user ${user_id}:`, response.status, response.statusText)
+      return []
+    } catch (error) {
+      console.error("Error fetching enrolled courses:", error)
       return []
     }
   }
@@ -227,26 +287,49 @@ export default function CoursesClientPage({ params }: { params: { user_id: strin
         const user_id = params.user_id
         setUserId(user_id)
 
-        // Fetch user role and courses in parallel
-        const [role, formattedCourses, publicCoursesData] = await Promise.all([
-          fetchUserRole(),
-          fetchCourses(user_id),
-          fetchPublicCourses()
-        ])
-
-        setUserRole(role)
-        setUserCourses(formattedCourses)
-        setPublicCourses(publicCoursesData)
+        // First fetch user role, then fetch courses based on role
+        const role = await fetchUserRole()
+        
+        if (role === "STUDENT") {
+          // For students, fetch personal courses, all public courses, and enrolled courses
+          const [formattedCourses, publicCoursesData, enrolledCoursesData] = await Promise.all([
+            fetchCourses(user_id),
+            fetchPublicCourses(role),
+            fetchEnrolledCourses(user_id)
+          ])
+          
+          setUserRole(role)
+          setUserCourses(formattedCourses)
+          setPublicCourses(publicCoursesData)
+          setEnrolledCourses(enrolledCoursesData)
+        } else {
+          // For teachers, fetch personal courses and their public courses
+          const [formattedCourses, publicCoursesData] = await Promise.all([
+            fetchCourses(user_id),
+            fetchPublicCourses(role)
+          ])
+          
+          setUserRole(role)
+          setUserCourses(formattedCourses)
+          setPublicCourses(publicCoursesData)
+          setEnrolledCourses([]) // Teachers don't have enrolled courses
+        }
 
         // Debug: Log the data
-        console.log("User role:", role)
-        console.log("Formatted courses:", formattedCourses)
-        console.log("Public courses:", publicCoursesData)
+        if (DEBUG) {
+          console.log("User role:", role)
+          console.log("User courses:", userCourses)
+          console.log("Public courses:", publicCourses)
+          console.log("Enrolled courses:", enrolledCourses)
+          console.log("Available public courses (before filtering):", publicCourses)
+          console.log("Enrolled course IDs:", enrolledCourses.map(c => c.public_course_id))
+        }
       } catch (error) {
         console.error("Error fetching data:", error)
         setError(error instanceof Error ? error.message : "An unknown error occurred")
         setUserCourses([])
         setPublicCourses([])
+        setEnrolledCourses([])
       } finally {
         setIsLoading(false)
       }
@@ -257,8 +340,13 @@ export default function CoursesClientPage({ params }: { params: { user_id: strin
 
   // Debug: Log courses when they change
   useEffect(() => {
-    console.log("Courses updated:", userCourses)
-  }, [userCourses])
+    if (DEBUG) {
+      console.log("Courses updated:", userCourses)
+      console.log("Public courses updated:", publicCourses)
+      console.log("Enrolled courses updated:", enrolledCourses)
+      console.log("Available public courses updated:", availablePublicCourses)
+    }
+  }, [userCourses, publicCourses, enrolledCourses, availablePublicCourses, DEBUG])
 
   if (isLoading) {
     return (
@@ -464,7 +552,7 @@ export default function CoursesClientPage({ params }: { params: { user_id: strin
                 transition={{ duration: 0.5, delay: 0.7 }}
               >
                 <span className="text-md text-muted-foreground">
-                  {filteredCourses.length} course{filteredCourses.length !== 1 ? "s" : ""}
+                  {filteredCourses.length + filteredEnrolledCourses.length} course{(filteredCourses.length + filteredEnrolledCourses.length) !== 1 ? "s" : ""}
                 </span>
                 <Button 
                   variant="outline" 
@@ -487,15 +575,27 @@ export default function CoursesClientPage({ params }: { params: { user_id: strin
               </Button>
             </div>
 
-            {filteredCourses.length > 0 ? (
+            {(filteredCourses.length > 0 || filteredEnrolledCourses.length > 0) ? (
               <motion.div
                 className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.8, delay: 0.8 }}
               >
+                {/* Personal Courses */}
                 {filteredCourses.map((course, index) => (
                   <CourseCard key={course.course_id} course={course} userId={userId} index={index} />
+                ))}
+                {/* Enrolled Public Courses */}
+                {filteredEnrolledCourses.map((course, index) => (
+                  <PublicCourseCard 
+                    key={course.public_course_id} 
+                    course={course} 
+                    userId={userId} 
+                    index={filteredCourses.length + index} 
+                    isStudentView={true}
+                    isEnrolled={true}
+                  />
                 ))}
               </motion.div>
             ) : (
@@ -526,7 +626,7 @@ export default function CoursesClientPage({ params }: { params: { user_id: strin
                 transition={{ duration: 0.5, delay: 0.9 }}
               >
                 <span className="text-md text-muted-foreground">
-                  {filteredPublicCourses.filter(c => c.isPublished).length} course{filteredPublicCourses.filter(c => c.isPublished).length !== 1 ? "s" : ""}
+                  {availablePublicCourses.length} of {publicCourses.length} course{availablePublicCourses.length !== 1 ? "s" : ""} available
                 </span>
                 <Button 
                   variant="outline" 
@@ -540,19 +640,57 @@ export default function CoursesClientPage({ params }: { params: { user_id: strin
               </motion.div>
             </div>
 
-            {filteredPublicCourses.filter(c => c.isPublished).length > 0 ? (
+            {availablePublicCourses.length > 0 ? (
               <motion.div
                 className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.8, delay: 1.0 }}
               >
-                {filteredPublicCourses.filter(c => c.isPublished).map((course, index) => (
+                {availablePublicCourses.map((course, index) => (
                   <PublicCourseCard key={course.public_course_id} course={course} userId={userId} index={index} isStudentView={true} />
                 ))}
               </motion.div>
             ) : (
-              <EmptyPublicCourseState userId={userId} isStudentView={true} />
+              <motion.div
+                className="text-center py-16"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+              >
+                <motion.div
+                  className="mx-auto w-24 h-24 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-6"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                >
+                  <BookOpen className="h-12 w-12 text-slate-400" />
+                </motion.div>
+                
+                <motion.h3
+                  className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-2"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.5, delay: 0.3 }}
+                >
+                  {publicCourses.length === 0 
+                    ? "No Public Courses Available" 
+                    : "All Available Courses Enrolled"
+                  }
+                </motion.h3>
+                
+                <motion.p
+                  className="text-slate-600 dark:text-slate-400 mb-8 max-w-md mx-auto"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.5, delay: 0.4 }}
+                >
+                  {publicCourses.length === 0 
+                    ? "There are no published public courses available for enrollment at the moment."
+                    : "You have enrolled in all available public courses. Check back later for new courses!"
+                  }
+                </motion.p>
+              </motion.div>
             )}
           </motion.section>
         </>
@@ -1129,15 +1267,19 @@ const PublicCourseCard = ({
   course, 
   userId, 
   index, 
-  isStudentView = false 
+  isStudentView = false,
+  isEnrolled = false
 }: { 
   course: PublicCourse; 
   userId: string; 
   index: number;
   isStudentView?: boolean;
+  isEnrolled?: boolean;
 }) => {
   const [isHovered, setIsHovered] = useState(false)
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
+  const [isEnrolling, setIsEnrolling] = useState(false)
+  const [enrollmentStatus, setEnrollmentStatus] = useState(isEnrolled)
   const cardRef = useRef<HTMLDivElement>(null)
 
   // Handle mouse movement for 3D effect
@@ -1150,10 +1292,44 @@ const PublicCourseCard = ({
     }
   }
 
+  // Handle student enrollment
+  const handleEnroll = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    if (isEnrolling || enrollmentStatus) return
+    
+    setIsEnrolling(true)
+    try {
+      const response = await fetch(`/api/public-courses/${course.public_course_id}/enroll-student`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ student_id: userId })
+      })
+
+      if (response.ok) {
+        setEnrollmentStatus(true)
+        toast.success("Successfully enrolled in the course!")
+        // Refresh the page to update the course lists
+        window.location.reload()
+      } else {
+        const error = await response.json()
+        toast.error(error.error || "Failed to enroll in course")
+      }
+    } catch (error) {
+      console.error("Error enrolling in course:", error)
+      toast.error("Failed to enroll in course")
+    } finally {
+      setIsEnrolling(false)
+    }
+  }
+
   const totalChapters = course.units.reduce((total, unit) => total + unit.chapters.length, 0)
 
   return (
-    <Link href={`/public-courses/${course.public_course_id}`} className="block h-full">
+    <div className="block h-full">
       <motion.div
         ref={cardRef}
         initial={{ opacity: 0, y: 30 }}
@@ -1202,14 +1378,26 @@ const PublicCourseCard = ({
 
             {/* Action Buttons */}
             <div className="absolute top-3 left-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-              {!isStudentView && (
-                <Button size="sm" variant="secondary" className="mr-2">
-                  <Edit className="h-4 w-4" />
+              {!isStudentView ? (
+                <>
+                  <Button size="sm" variant="secondary" className="mr-2" asChild>
+                    <Link href={`/public-courses/${course.public_course_id}`}>
+                      <Edit className="h-4 w-4" />
+                    </Link>
+                  </Button>
+                  <Button size="sm" variant="secondary" asChild>
+                    <Link href={`/public-courses/${course.public_course_id}`}>
+                      <Eye className="h-4 w-4" />
+                    </Link>
+                  </Button>
+                </>
+              ) : (
+                <Button size="sm" variant="secondary" asChild>
+                  <Link href={`/public-courses/${course.public_course_id}`}>
+                    <Eye className="h-4 w-4" />
+                  </Link>
                 </Button>
               )}
-              <Button size="sm" variant="secondary">
-                <Eye className="h-4 w-4" />
-              </Button>
             </div>
           </div>
 
@@ -1240,7 +1428,7 @@ const PublicCourseCard = ({
 
             {/* Course Stats */}
             <div className="mt-auto pt-4 border-t border-slate-200 dark:border-slate-700">
-              <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center justify-between text-sm mb-3">
                 <span className="text-slate-600 dark:text-slate-400">
                   {totalChapters} chapters
                 </span>
@@ -1248,11 +1436,38 @@ const PublicCourseCard = ({
                   by {course.teacher.name || course.teacher.email}
                 </span>
               </div>
+              
+              {/* Enrollment Button for Students */}
+              {isStudentView && (
+                <Button
+                  onClick={handleEnroll}
+                  disabled={isEnrolling || enrollmentStatus}
+                  className="w-full"
+                  size="sm"
+                >
+                  {isEnrolling ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Enrolling...
+                    </>
+                  ) : enrollmentStatus ? (
+                    <>
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Enrolled
+                    </>
+                  ) : (
+                    <>
+                      <Users className="h-4 w-4 mr-2" />
+                      Enroll Now
+                    </>
+                  )}
+                </Button>
+              )}
             </div>
           </div>
         </motion.div>
       </motion.div>
-    </Link>
+    </div>
   )
 }
 
