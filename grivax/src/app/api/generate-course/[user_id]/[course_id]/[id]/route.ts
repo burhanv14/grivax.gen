@@ -1,12 +1,13 @@
-import { NextResponse } from 'next/server'
-import prisma from '@/lib/prisma'
-import { Anthropic } from '@anthropic-ai/sdk'
-import axios from 'axios'
+import { NextResponse } from 'next/server';
+import { GoogleGenAI } from '@google/genai';
+import prisma from '@/lib/prisma';
+import axios from 'axios';
 
-// Initialize Anthropic client
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY || '',
-})
+if (!process.env.GEMINI_API_KEY) {
+  throw new Error('Missing GEMINI_API_KEY');
+}
+
+const ai = new GoogleGenAI({});
 
 // Add timeout and retry configuration for axios
 const axiosConfig = {
@@ -197,82 +198,50 @@ function createFallbackCourseContent(genCourse: any) {
  */
 async function generateDetailedCourse(genCourse: any) {
   try {
-    const modules = genCourse.modules as any[]
-    
-    const prompt = `You are an expert course designer. I need you to create a detailed course structure based on the following information:
-
+    const modules = genCourse.modules as any[];
+    const prompt = `Return ONLY JSON.
 Course Title: ${genCourse.title}
-Course Description: ${genCourse.description}
+Description: ${genCourse.description}
+Modules:
+${modules.map((m: any, i: number) => `Week ${m.week}: ${m.title} Objectives: ${Array.isArray(m.objectives) ? m.objectives.join(', ') : m.objectives} Time: ${m.timeSpent}`).join('\n')}
 
-The course has ${modules.length} modules (weeks), each with the following details:
-${modules.map((module, index) => `
-Module ${index + 1} (Week ${module.week}):
-- Title: ${module.title}
-- Objectives: ${Array.isArray(module.objectives) ? module.objectives.join(', ') : module.objectives}
-- Time Duration: ${module.timeSpent}
-`).join('\n')}
-
-Please create a detailed course structure with the following requirements:
-1. Each module should be treated as a unit
-2. Each unit should contain 2-3 relevant chapters (keep it concise for faster generation)
-3. Each chapter should have:
-   - A clear, descriptive title
-   - A brief description of what will be covered
-   - Estimated time to complete (in minutes)
-   - Key learning points (3-5 bullet points)
-   - Suggested resources (books, articles, etc.)
-   - A youtube search query to find a relevant video for the chapter
-
-IMPORTANT: Return ONLY valid JSON in the following structure (no additional text):
+JSON structure:
 {
-  "units": [
+  "units":[
     {
-      "unitNumber": 1,
-      "title": "Unit Title",
-      "description": "Unit description",
-      "chapters": [
+      "unitNumber":1,
+      "title":"Unit Title",
+      "description":"Unit description",
+      "chapters":[
         {
-          "chapterNumber": 1,
-          "title": "Chapter Title",
-          "description": "Chapter description",
-          "estimatedTime": "30 minutes",
-          "learningPoints": ["Point 1", "Point 2", "Point 3"],
-          "resources": ["Resource 1", "Resource 2"],
-          "youtubeSearchQuery": "Youtube search query"
+          "chapterNumber":1,
+          "title":"Chapter Title",
+          "description":"Chapter description",
+          "estimatedTime":"30 minutes",
+          "learningPoints":["Point 1","Point 2","Point 3"],
+          "resources":["Resource 1","Resource 2"],
+          "youtubeSearchQuery":"query"
         }
       ]
     }
   ]
-}`
+}`;
 
-    const response = await anthropic.messages.create({
-      model: 'claude-3-haiku-20240307',
-      max_tokens: 3000, // Reduced token limit for faster response
-      messages: [
-        {
-          role: 'user',
-          content: prompt
-        }
-      ]
-    })
+    const gen = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: { systemInstruction: 'Return valid JSON only.', thinkingConfig: { thinkingBudget: 0 } },
+    });
 
-    const content = response.content[0].type === 'text' 
-      ? response.content[0].text 
-      : JSON.stringify(response.content[0])
-    
-    // More robust JSON extraction
-    const jsonMatch = content.match(/\{[\s\S]*\}/)
-    if (jsonMatch) {
-      const parsedContent = JSON.parse(jsonMatch[0])
-      if (parsedContent.units && Array.isArray(parsedContent.units)) {
-        return parsedContent
-      }
-    }
-    
-    throw new Error('Invalid response format')
-  } catch (error) {
-    console.error('Error generating detailed course:', error)
-    throw error
+    const text = gen.text || '';
+    const match = text.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error('Invalid response format');
+    const parsed = JSON.parse(match[0]);
+    if (!parsed.units || !Array.isArray(parsed.units)) throw new Error('Units missing');
+    return parsed;
+  } catch (e) {
+    console.error('generateDetailedCourse error:', e);
+    throw e;
   }
 }
 
@@ -426,44 +395,31 @@ async function createChaptersInParallel(unitId: string, chapterDetails: any[]): 
  * **OPTIMIZATION 10: Streamlined reading material generation**
  */
 async function generateReadingMaterial(chapterDetails: {
-  title: string;
-  description: string;
-  estimatedTime: string;
-  learningPoints: string[];
-  resources: string[];
+  title: string; description: string; estimatedTime: string;
+  learningPoints: string[]; resources: string[];
 }) {
   try {
-    const prompt = `Create concise reading material for: "${chapterDetails.title}"
+    const prompt = `Create concise markdown reading material.
 
+Title: ${chapterDetails.title}
 Description: ${chapterDetails.description}
 Learning Points: ${chapterDetails.learningPoints.join(', ')}
 
-Format as markdown with:
+Format:
 # ${chapterDetails.title}
 ## Overview
-## Key Points (bullet format)
+## Key Points
 ## Summary
-
-Keep it concise and educational. Focus on practical information.`
-
-    const response = await anthropic.messages.create({
-      model: 'claude-3-haiku-20240307',
-      max_tokens: 2000, // Reduced for faster generation
-      messages: [
-        {
-          role: 'user',
-          content: prompt
-        }
-      ]
-    })
-
-    return response.content[0].type === 'text' 
-      ? response.content[0].text 
-      : `# ${chapterDetails.title}\n\nContent could not be generated.`
-    
-  } catch (error) {
-    console.error('Error generating reading material:', error)
-    return `# ${chapterDetails.title}\n\nReading material could not be generated at this time.`
+`;
+    const gen = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: { systemInstruction: 'Return markdown only.', thinkingConfig: { thinkingBudget: 0 } },
+    });
+    return gen.text || `# ${chapterDetails.title}\n\nContent unavailable.`;
+  } catch (e) {
+    console.error('generateReadingMaterial error:', e);
+    return `# ${chapterDetails.title}\n\nReading material could not be generated.`;
   }
 }
 
@@ -516,86 +472,46 @@ async function createUnit(course_id: string, unitDetails: {
  */
 async function generateUnitTest(unit_id: string, unitDetails: any) {
   try {
-    const prompt = `You are an expert educator creating flashcard questions for a unit test. 
-
+    const prompt = `Return ONLY JSON.
 Unit: ${unitDetails.title}
 Description: ${unitDetails.description}
+Chapters:
+${unitDetails.chapters.map((c: any, i: number) => `${i + 1}. ${c.title} - ${c.description}`).join('\n')}
 
-Chapters in this unit:
-${unitDetails.chapters.map((chapter: any, index: number) => 
-  `${index + 1}. ${chapter.title} - ${chapter.description}`
-).join('\n')}
-
-Create 5-7 flashcard questions that test understanding of the key concepts from this unit. Each question should be:
-- A clear, concise question
-- Have 4 multiple choice options (A, B, C, D)
-- Include the correct answer
-- Cover different aspects of the unit content
-
-Return ONLY valid JSON in this exact format [below is just a skeleton of the format]:
+Format:
 {
-  "questions": [
+  "questions":[
     {
-      "id": 1,
-      "question": "What is the main concept?",
-      "options": {
-        "A": "Option A",
-        "B": "Option B", 
-        "C": "Option C",
-        "D": "Option D"
-      },
-      "correctAnswer": "A",
-      "explanation": "Brief explanation of why this is correct"
+      "id":1,
+      "question":"Question?",
+      "options":{"A":"...","B":"...","C":"...","D":"..."},
+      "correctAnswer":"A",
+      "explanation":"..."
     }
   ]
-}`
-
-    const response = await anthropic.messages.create({
-      model: 'claude-3-haiku-20240307',
-      max_tokens: 2000,
-      messages: [
-        {
-          role: 'user',
-          content: prompt
-        }
-      ]
-    })
-
-    const content = response.content[0]
-    let questions = []
-    
-    if (content.type === 'text') {
-      try {
-        const parsed = JSON.parse(content.text)
-        questions = parsed.questions || []
-      } catch (parseError) {
-        console.error('Error parsing AI response:', parseError)
-        questions = createFallbackTestQuestions(unitDetails.title)
+}`;
+    const gen = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: { systemInstruction: 'Return valid JSON only.', thinkingConfig: { thinkingBudget: 0 } },
+    });
+    let questions: any[] = [];
+    try {
+      const text = gen.text || '';
+      const m = text.match(/\{[\s\S]*\}/);
+      if (m) {
+        const parsed = JSON.parse(m[0]);
+        questions = Array.isArray(parsed.questions) ? parsed.questions : [];
       }
-    } else {
-      questions = createFallbackTestQuestions(unitDetails.title)
+      if (!questions.length) questions = createFallbackTestQuestions(unitDetails.title);
+    } catch {
+      questions = createFallbackTestQuestions(unitDetails.title);
     }
-
-    // Create test in database
-    const test = await prisma.test.create({
-      data: {
-        unit_id: unit_id,
-        questions: questions
-      }
-    })
-
-    return test
-
-  } catch (error) {
-    console.error('Error generating unit test:', error)
-    // Create fallback test
-    const questions = createFallbackTestQuestions(unitDetails.title)
-    return await prisma.test.create({
-      data: {
-        unit_id: unit_id,
-        questions: questions
-      }
-    })
+    return await prisma.test.create({ data: { unit_id, questions } });
+  } catch (e) {
+    console.error('generateUnitTest error:', e);
+    const questions = createFallbackTestQuestions(unitDetails.title);
+    return await prisma.test.create({ data: { unit_id, questions } });
   }
 }
 

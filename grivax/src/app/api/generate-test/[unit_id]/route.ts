@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
-import { Anthropic } from '@anthropic-ai/sdk'
+import { GoogleGenAI } from '@google/genai'
 
-// Initialize Anthropic client
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY || '',
-})
+if (!process.env.GEMINI_API_KEY) {
+  throw new Error('Missing GEMINI_API_KEY')
+}
+
+const ai = new GoogleGenAI({})
 
 export async function POST(
   request: Request,
@@ -65,69 +66,48 @@ async function generateFlashcardQuestions(unit: any) {
     // Extract key information from unit and chapters
     const unitContent = {
       unitTitle: unit.name,
-      chapters: unit.chapters.map((chapter: any) => ({
-        title: chapter.name,
-        readingMaterial: chapter.readingMaterial
-      }))
+      chapters: unit.chapters.map((c: any) => c.name)
     }
 
-    const prompt = `You are an expert educator creating flashcard questions for a unit test. 
+    const prompt = `You are an expert educator. Create 5-7 flashcard MCQs for unit "${unitContent.unitTitle}".
+Chapters:
+${unitContent.chapters.map((t: string, i: number) => `${i + 1}. ${t}`).join('\n')}
 
-Unit: ${unitContent.unitTitle}
-
-Chapters in this unit:
-${unitContent.chapters.map((chapter: any, index: number) => 
-  `${index + 1}. ${chapter.title}`
-).join('\n')}
-
-Create 5-7 flashcard questions that test understanding of the key concepts from this unit. Each question should be:
-- A clear, concise question
-- Have 4 multiple choice options (A, B, C, D)
-- Include the correct answer
-- Cover different aspects of the unit content
-
-Return ONLY valid JSON in this exact format:
+Return ONLY JSON:
 {
-  "questions": [
+  "questions":[
     {
-      "id": 1,
-      "question": "What is the main concept?",
-      "options": {
-        "A": "Option A",
-        "B": "Option B", 
-        "C": "Option C",
-        "D": "Option D"
-      },
-      "correctAnswer": "A",
-      "explanation": "Brief explanation of why this is correct"
+      "id":1,
+      "question":"Question?",
+      "options":{"A":"...","B":"...","C":"...","D":"..."},
+      "correctAnswer":"A",
+      "explanation":"..."
     }
   ]
 }`
 
-    const response = await anthropic.messages.create({
-      model: 'claude-3-haiku-20240307',
-      max_tokens: 2000,
-      messages: [
-        {
-          role: 'user',
-          content: prompt
-        }
-      ]
+    const generation = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: {
+        systemInstruction: 'Return valid JSON only.',
+        thinkingConfig: { thinkingBudget: 0 }
+      }
     })
 
-    const content = response.content[0]
-    if (content.type === 'text') {
-      try {
-        const parsed = JSON.parse(content.text)
-        return parsed.questions || []
-      } catch (parseError) {
-        console.error('Error parsing AI response:', parseError)
-        return createFallbackQuestions(unitContent.unitTitle)
-      }
+    let questions: any[] = []
+    try {
+      const text = generation.text || ''
+      const jsonMatch = text.match(/\{[\s\S]*\}/)
+      if (!jsonMatch) throw new Error('No JSON found')
+      const parsed = JSON.parse(jsonMatch[0])
+      questions = Array.isArray(parsed.questions) ? parsed.questions : []
+    } catch (e) {
+      console.error('Parse error:', e)
+      questions = createFallbackQuestions(unitContent.unitTitle)
     }
-
-    return createFallbackQuestions(unitContent.unitTitle)
-
+    if (!questions.length) questions = createFallbackQuestions(unitContent.unitTitle)
+    return questions
   } catch (error) {
     console.error('Error generating flashcard questions:', error)
     return createFallbackQuestions(unit.name)
@@ -139,26 +119,16 @@ function createFallbackQuestions(unitTitle: string) {
     {
       id: 1,
       question: `What is the main topic covered in ${unitTitle}?`,
-      options: {
-        A: "Basic concepts",
-        B: "Advanced techniques", 
-        C: "Historical background",
-        D: "All of the above"
-      },
+      options: { A: "Basic concepts", B: "Advanced techniques", C: "Historical background", D: "All of the above" },
       correctAnswer: "D",
       explanation: "This unit covers multiple aspects of the topic."
     },
     {
       id: 2,
       question: `Which of the following is most important in ${unitTitle}?`,
-      options: {
-        A: "Memorization",
-        B: "Understanding concepts",
-        C: "Speed of completion",
-        D: "Following instructions"
-      },
+      options: { A: "Memorization", B: "Understanding concepts", C: "Speed of completion", D: "Following instructions" },
       correctAnswer: "B",
-      explanation: "Understanding the underlying concepts is most important for learning."
+      explanation: "Understanding underlying concepts matters most."
     }
   ]
 }

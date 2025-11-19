@@ -144,11 +144,9 @@ export default function Header() {
           {/* Logo and Brand */}
           <div className="flex items-center gap-2">
             <Link href="/" className="flex items-center gap-2 group">
-              <div className="relative flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/80 shadow-md group-hover:shadow-lg transition-all duration-300 overflow-hidden">
-                <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.4),transparent)]"></div>
-                <span className="font-poppins text-lg font-bold text-primary-foreground relative z-10">G</span>
-              </div>
-              <span className="font-poppins text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/80 dark:from-primary dark:to-primary/90">
+              {/* Replace the logo with the new SVG */}
+              <img src="/grivaxLogo.png" alt="Grivax Logo" className="h-12 w-12" />
+              <span className="font-poppins text-2xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/80 dark:from-primary dark:to-primary/90">
                 Grivax
               </span>
             </Link>

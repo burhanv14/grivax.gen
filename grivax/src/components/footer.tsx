@@ -109,13 +109,12 @@ export default function Footer() {
         <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5">
           <div className="sm:col-span-2 lg:col-span-2">
             <Link href="/" className="mb-6 flex items-center gap-2 group">
-              <div
-                className={`flex h-10 w-10 items-center justify-center rounded-full transition-all duration-300 group-hover:scale-110 ${
-                  isDark ? "bg-zinc-900 border border-zinc-700" : "bg-indigo-100 border border-indigo-200"
-                }`}
-              >
-                <span className={`font-poppins text-lg font-bold ${isDark ? "text-white" : "text-indigo-700"}`}>G</span>
-              </div>
+              {/* Replace logo with SVG from public */}
+              <img
+                src="/grivaxLogo.png"
+                alt="Grivax Logo"
+                className="h-114 w-14 transition-all duration-300 group-hover:scale-110"
+              />
               <span className={`font-poppins text-xl font-bold ${isDark ? "text-white" : "text-zinc-900"}`}>
                 Grivax
               </span>
