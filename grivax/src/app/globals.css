@@ -6,17 +6,12 @@
   .text-balance {
     text-wrap: balance;
   }
-
-  /* Add these custom utility classes for 3D effects */
   .perspective-1000 {
     perspective: 1000px;
   }
-
   .preserve-3d {
     transform-style: preserve-3d;
   }
-
-  /* Rotation utilities */
   .rotate-y-12 {
     transform: rotateY(12deg);
   }
@@ -24,24 +19,24 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 40 30% 98%;
     --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
+    --card: 40 30% 99%;
     --card-foreground: 240 10% 3.9%;
-    --popover: 0 0% 100%;
+    --popover: 40 30% 99%;
     --popover-foreground: 240 10% 3.9%;
     --primary: 252 59% 48%;
     --primary-foreground: 0 0% 98%;
-    --secondary: 240 4.8% 95.9%;
+    --secondary: 40 20% 92%;
     --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
+    --muted: 40 20% 95%;
     --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
+    --accent: 40 20% 92%;
     --accent-foreground: 240 5.9% 10%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
+    --border: 40 20% 88%;
+    --input: 40 20% 88%;
     --ring: 252 59% 48%;
     --radius: 0.5rem;
     --primary-rgb: 124, 58, 237;
@@ -71,6 +66,7 @@
   }
 }
 
+
 @layer base {
   * {
     @apply border-border;
@@ -81,25 +77,30 @@
   }
 }
 
+
 .font-poppins {
   font-family: var(--font-poppins);
 }
 
-/* Smooth transitions for theme changes */
+
 * {
   transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 150ms;
+  transition-duration: 300ms; /* from file 2 */
 }
 
-/* Pattern background */
+
+.dark {
+  color-scheme: dark;
+}
+
+
 .pattern-grid-lg {
   background-image: linear-gradient(to right, rgba(var(--primary-rgb), 0.1) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(var(--primary-rgb), 0.1) 1px, transparent 1px);
   background-size: 20px 20px;
 }
 
-/* Animated glow effect */
 .glow-effect {
   animation: pulse 4s ease-in-out infinite alternate;
 }
@@ -113,7 +114,6 @@
   }
 }
 
-/* Floating particles animation */
 .particle {
   position: absolute;
   width: 6px;
@@ -122,20 +122,17 @@
   background-color: rgba(var(--primary-rgb), 0.5);
   pointer-events: none;
 }
-
 .particle-1 {
   top: 20%;
   left: 10%;
   animation: float 8s ease-in-out infinite;
 }
-
 .particle-2 {
   top: 60%;
   left: 60%;
   animation: float 12s ease-in-out infinite;
   animation-delay: -3s;
 }
-
 .particle-3 {
   top: 40%;
   left: 80%;
@@ -164,22 +161,20 @@
   }
 }
 
-/* Notch path animation */
 .notch-path {
   animation: glow 3s ease-in-out infinite alternate;
 }
 
-/* Update the notch glow animation to be more subtle */
 @keyframes glow {
-  0% {
+  from {
     filter: drop-shadow(0 0 2px rgba(var(--primary-rgb), 0.3));
   }
-  100% {
+  to {
     filter: drop-shadow(0 0 5px rgba(var(--primary-rgb), 0.5));
   }
 }
 
-/* Shooting star animations */
+
 @keyframes shootingStar1 {
   0% {
     transform: translateX(0) translateY(0) rotate(45deg);
@@ -214,4 +209,39 @@
     transform: translateX(-200px) translateY(200px) rotate(45deg);
     opacity: 0;
   }
+}
+
+
+#nprogress {
+  pointer-events: none;
+}
+
+#nprogress .bar {
+  background: linear-gradient(to right, #7c3aed, #3b82f6);
+  position: fixed;
+  z-index: 1031;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  border-radius: 0 0 4px 4px;
+  box-shadow: 0 0 15px rgba(124, 58, 237, 0.7), 0 0 30px rgba(59, 130, 246, 0.5);
+  animation: glow 2s ease-in-out infinite alternate;
+}
+
+#nprogress .peg {
+  display: block;
+  position: absolute;
+  right: 0px;
+  width: 100px;
+  height: 100%;
+  box-shadow: 0 0 15px #7c3aed, 0 0 30px #3b82f6;
+  opacity: 1.0;
+  transform-origin: 100% 50%;
+  transform: rotate(3deg) translate(0px, -1px);
+}
+
+#nprogress .spinner,
+#nprogress .spinner-icon {
+  display: none;
 }
