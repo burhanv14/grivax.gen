@@ -11,19 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Plus, Trash2, Save, Eye, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
-
-interface Unit {
-  id: string
-  name: string
-  chapters: Chapter[]
-}
-
-interface Chapter {
-  id: string
-  name: string
-  youtubeVidLink: string
-  readingMaterial: string
-}
+import type { Unit, Chapter } from "@/types"
 
 export default function CreatePublicCourseClient({ 
   params 
@@ -145,8 +133,10 @@ export default function CreatePublicCourseClient({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-User-Id': params.user_id,
         },
         body: JSON.stringify({
+          teacher_id: params.user_id,
           title: courseData.title,
           description: courseData.description,
           image: courseData.image,
@@ -190,8 +180,10 @@ export default function CreatePublicCourseClient({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-User-Id': params.user_id,
         },
         body: JSON.stringify({
+          teacher_id: params.user_id,
           title: courseData.title,
           description: courseData.description,
           image: courseData.image,
