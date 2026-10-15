@@ -1,9 +1,5 @@
 import { getPageContext } from './getPageContext';
-
-interface Message {
-  role: 'user' | 'assistant' | 'system';
-  content: string;
-}
+import type { Message } from '@/types';
 
 export async function getAIResponse(
   messages: Message[],
