@@ -29,10 +29,8 @@
 - **i18next** - Internationalization support.
 - **Framer Motion** - Smooth animations.
 
-### Backend (Planned for Future Integration):
-- **Node.js & Express** - Backend server.
-- **MongoDB / PostgreSQL** - Database for storing course and quiz data.
-- **OpenAI API** - AI-powered content generation (future scope).
+### Backend (AI Generation):
+- **Gemini (Google GenAI)** for course, quiz, test, and reading material generation.
 
 ---
 
@@ -177,3 +175,26 @@ Real-time (near) progress for course material generation is exposed through an e
 - Persist fine-grained events (chapter_started, unit_completed) for audit / analytics.
 - Add cancellation endpoint to abort long external API calls.
 
+
+## Environmental Variables required
+env files:
+NEXT_PUBLIC_RECAPTCHA_SITE_KEY = 
+
+RECAPTCHA_SECRET_KEY = 
+
+DATABASE_URL="prisma+postgres://accelerate.prisma-data.net/?api_key=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcGlfa2V5IjoiMDA0YTg4MjAtODM3Mi00NjI4LTk5ZjEtOWVlZWY0OTU5NzA2IiwidGVuYW50X2lkIjoiZGI3YjZhZmEzN2VhOGVmNmUxYTUxMTU2MTcyNmFkZmM0YmJjM2NkNjk3ZmViNmRhYmU0MzBkMjgxZjczOTRkMCIsImludGVybmFsX3NlY3JldCI6ImMzZDJiMTUwLTQ0NTAtNGEyOS1hYWJkLTUzYjg3MWQ0MTMwMCJ9.LpoW1txUIFnycFtKXuwFhPOOLoZW0TEGPoXaZ81nssY"
+
+#Providers
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
+
+#Auth Config
+NEXTAUTH_SECRET=
+NEXTAUTH_URL=http://localhost:3000
+
+#API Keys
+ANTHROPIC_API_KEY=
+UNSPLASH_ACCESS_KEY=
+GEMINI_API_KEY=
