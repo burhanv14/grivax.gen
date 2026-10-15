@@ -27,22 +27,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
-
-interface CourseModule {
-  week: number
-  title: string
-  objectives: string[]
-  timeSpent: string
-}
-
-interface CourseData {
-  course_id: string
-  courseStructure: {
-    title: string
-    description: string
-    modules: CourseModule[]
-  }
-}
+import type { CourseModule, CourseData } from "@/types"
 
 // Custom edge component with decorative elements
 function CustomEdge({

@@ -11,12 +11,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import { toast } from "sonner"
-
-interface GenerateCoursesPageProps {
-  params: {
-    user_id: string
-  }
-}
+import type { GenerateCoursesPageProps } from "@/types"
 
 export default function GenerateCoursesPage({ params }: GenerateCoursesPageProps) {
   const router = useRouter()

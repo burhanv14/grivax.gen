@@ -7,16 +7,12 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
-
-interface ChapterProgress {
-  unit_id: string;
-  chapters: number;
-}
+import type { ChapterProgress, CourseGenerationStatus } from '@/types';
 
 export default function ProgressPageClient() {
   const params = useParams();
   const router = useRouter();
-  const [status, setStatus] = useState<any>(null);
+  const [status, setStatus] = useState<CourseGenerationStatus | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchStatus = async () => {
