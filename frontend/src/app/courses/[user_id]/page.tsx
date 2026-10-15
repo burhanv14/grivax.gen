@@ -2,8 +2,7 @@ import { getServerSession } from "next-auth"
 import { authConfig } from "@/lib/auth"
 import CoursesClientPage from "./CoursesClientPage"
 import { redirect } from "next/navigation"
-import { headers } from "next/headers"
-import prisma from "@/lib/prisma"
+import { BACKEND_URL } from "@/lib/backend"
 
 export const metadata = {
   title: "Courses | Grivax",
@@ -11,77 +10,36 @@ export const metadata = {
 }
 
 export default async function CoursesPage({ params }: { params: { user_id: string } }) {
-  // Get the session on the server side
   const session = await getServerSession(authConfig)
   
-  // If no session, redirect to login
   if (!session) {
-    redirect("/login")
+    redirect("/login?callbackUrl=" + encodeURIComponent(`/courses/${params.user_id}`))
   }
   
-  // Get the user ID from the session or params
   let userId = params.user_id
   
-  // If we have a session with email, try to get the user ID from the database
   if (session?.user?.email) {
     try {
-      // First try to get the user directly from the database
-      const dbUser = await prisma.user.findUnique({
-        where: { email: session.user.email }
+      const response = await fetch(`${BACKEND_URL}/api/user?email=${encodeURIComponent(session.user.email)}`, {
+        cache: 'no-store'
       })
       
-      if (dbUser) {
-        console.log(`Found user in database: ${dbUser.email} with ID: ${dbUser.user_id}`)
-        
-        // Verify that the requested user_id matches the current session user
-        // This ensures users can only access their own courses
-        if (dbUser.user_id !== params.user_id) {
-          console.log(`User ${dbUser.email} attempted to access courses for user ID: ${params.user_id}`)
-          // Redirect to the correct user's courses page
-          redirect(`/courses/${dbUser.user_id}`)
-        }
-        
-        userId = dbUser.user_id
-      } else {
-        // If not found in database, try the API endpoint
-        console.log(`User not found in database, trying API endpoint for email: ${session.user.email}`)
-        
-        // Get the host from headers to construct an absolute URL
-        const headersList = headers()
-        const host = headersList.get("host") || "localhost:3000"
-        const protocol = process.env.NODE_ENV === "development" ? "http" : "https"
-        
-        // Construct a proper absolute URL
-        const apiUrl = `${protocol}://${host}/api/user?email=${encodeURIComponent(session.user.email)}`
-        
-        const response = await fetch(apiUrl, {
-          cache: 'no-store'
-        })
-        
-        if (response.ok) {
-          const apiUser = await response.json()
-          if (apiUser && apiUser.user_id) {
-            console.log(`Found user from API: ${apiUser.user_id}`)
-            
-            // Verify that the requested user_id matches the current session user
-            if (apiUser.user_id !== params.user_id) {
-              console.log(`User ${session.user.email} attempted to access courses for user ID: ${params.user_id}`)
-              // Redirect to the correct user's courses page
-              redirect(`/courses/${apiUser.user_id}`)
-            }
-            
-            userId = apiUser.user_id
+      if (response.ok) {
+        const apiUser = await response.json()
+        if (apiUser && apiUser.user_id) {
+          if (apiUser.user_id !== params.user_id) {
+            redirect(`/courses/${apiUser.user_id}`)
           }
+          userId = apiUser.user_id
         }
       }
     } catch (error) {
+      if ((error as any)?.digest?.startsWith('NEXT_REDIRECT')) {
+        throw error
+      }
       console.error("Error fetching user data:", error)
-      // Continue with the user_id from params if there's an error
     }
   }
   
-  console.log(`Using user ID for courses page: ${userId}`)
-  
-  // Pass the user ID to the client component
   return <CoursesClientPage params={{ user_id: userId }} />
 }
