@@ -24,13 +24,17 @@
 
 ## 🛠️ Tech Stack
 ### Frontend:
-- **Next.js (App Router)** - Modern React framework for SSR and SSG.
-- **Tailwind CSS** - Utility-first CSS for styling.
-- **i18next** - Internationalization support.
-- **Framer Motion** - Smooth animations.
+- **Next.js 14 (App Router)** - Modern React frontend with SSR, SSG, and NextAuth.
+- **Tailwind CSS** - Modern UI styling and dark/light modes.
+- **Framer Motion** - Smooth transitions and animations.
 
-### Backend (AI Generation):
-- **Gemini (Google GenAI)** for course, quiz, test, and reading material generation.
+### Backend (Java & PostgreSQL):
+- **Java 25 & Spring Boot 4** - REST API backend microservice architecture.
+- **Spring Data JPA & Hibernate** - Object-Relational Mapping with native JSONB support.
+- **PostgreSQL** - Relational and JSON document storage.
+- **Spring Security Crypto** - BCrypt password hashing.
+- **Google Gemini REST API** - AI-powered syllabus, chapter, quiz, and test generation.
+- **Google Custom Search & YouTube Data API** - Automatic media curation.
 
 ---
 
