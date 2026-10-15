@@ -62,15 +62,20 @@ export default function Header() {
     fetchUserId()
   }, [isAuthenticated, session?.user?.email])
 
+  const effectiveUserId = userId || (session?.user as any)?.id || ""
+
   // Define navigation items with dynamic courses link
   const navItems = [
     { name: "Home", href: "/" },
     {
       name: "Courses",
-      href: isAuthenticated && userId ? `/courses/${userId}` : "/login",
+      href: isAuthenticated && effectiveUserId ? `/courses/${effectiveUserId}` : "/courses",
     },
-    { name: "Assessments", href: isAuthenticated ? "/assessments" : "/login" },
-    { name: "Dashboard", href: `/dashboard/${userId}` },
+    { name: "Assessments", href: isAuthenticated ? "/assessments" : "/login?callbackUrl=%2Fassessments" },
+    {
+      name: "Dashboard",
+      href: isAuthenticated && effectiveUserId ? `/dashboard/${effectiveUserId}` : "/dashboard",
+    },
   ]
 
   const menuItems = [
@@ -79,8 +84,13 @@ export default function Header() {
       items: [
         {
           name: "Dashboard",
-          href: `/dashboard/${userId}`,
+          href: isAuthenticated && effectiveUserId ? `/dashboard/${effectiveUserId}` : "/dashboard",
           icon: <User className="h-4 w-4" />,
+        },
+        {
+          name: "My Courses",
+          href: isAuthenticated && effectiveUserId ? `/courses/${effectiveUserId}` : "/courses",
+          icon: <CreditCard className="h-4 w-4" />,
         },
         {
           name: "Account Settings",
