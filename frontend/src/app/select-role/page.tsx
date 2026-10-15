@@ -15,7 +15,7 @@ export default function SelectRolePage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
-  const { data: session, status } = useSession()
+  const { data: session, status, update } = useSession()
   const router = useRouter()
 
   // Redirect if not authenticated
@@ -52,18 +52,33 @@ export default function SelectRolePage() {
     setError(null)
 
     try {
+      const userEmail = session?.user?.email || ""
+      const userId = (session?.user as any)?.id || ""
+
       const res = await fetch("/api/update-role", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...(userEmail ? { "X-User-Email": userEmail } : {}),
         },
-        body: JSON.stringify({ role: selectedRole }),
+        body: JSON.stringify({ 
+          role: selectedRole,
+          email: userEmail,
+          user_id: userId,
+        }),
       })
 
       const data = await res.json()
 
       if (res.ok) {
         setSuccess("Role updated successfully! Redirecting...")
+        if (update) {
+          try {
+            await update()
+          } catch (e) {
+            console.error("Session update error:", e)
+          }
+        }
         setTimeout(() => {
           router.push("/dashboard")
         }, 1000)
@@ -142,7 +157,7 @@ export default function SelectRolePage() {
                 <div>
                   <div className="font-medium">Student</div>
                   <div className="text-sm text-muted-foreground">
-                    Learn from courses, take quizzes, and track your progress
+                    Learn from courses, take unit tests & assessments, and track your progress
                   </div>
                 </div>
               </Label>
