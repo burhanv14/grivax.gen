@@ -7,15 +7,9 @@ import { X, Sparkles, ArrowRight } from "lucide-react"
 import { getAIResponse } from "@/lib/chatService"
 import { cn } from "@/lib/utils"
 import { motion, AnimatePresence } from "framer-motion"
+import type { Message } from "@/types"
 
-interface Message {
-  id: string
-  role: "user" | "assistant"
-  content: string
-  timestamp: Date
-}
-
-interface ChatInterfaceProps {
+export interface ChatInterfaceProps {
   onClose: () => void
 }
 
