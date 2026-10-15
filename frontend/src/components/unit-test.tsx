@@ -9,33 +9,9 @@ import { Separator } from "@/components/ui/separator"
 import { CheckCircle2, Clock, Trophy, AlertCircle, Loader2 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { toast } from "sonner"
+import type { UnitTestQuestion as Question, UnitTestData as TestData } from "@/types"
 
-interface Question {
-  id: number
-  question: string
-  options: {
-    A: string
-    B: string
-    C: string
-    D: string
-  }
-  correctAnswer: string
-  explanation: string
-}
-
-interface TestData {
-  test_id: string
-  questions: Question[]
-  hasAttempted: boolean
-  userAttempt: {
-    score: number
-    correctCount: number
-    totalQuestions: number
-    completedAt: string
-  } | null
-}
-
-interface UnitTestProps {
+export interface UnitTestProps {
   unitId: string
   userId: string
   unitName: string
@@ -76,11 +52,11 @@ export default function UnitTest({ unitId, userId, unitName, allChaptersComplete
           })
         }
       } else {
-        toast.error("Failed to load test")
+        toast.error("Failed to load unit test")
       }
     } catch (error) {
       console.error("Error fetching test data:", error)
-      toast.error("Failed to load test")
+      toast.error("Failed to load unit test")
     } finally {
       setIsLoading(false)
     }
@@ -128,7 +104,7 @@ export default function UnitTest({ unitId, userId, unitName, allChaptersComplete
           totalQuestions: data.attempt.totalQuestions
         })
         setShowResults(true)
-        toast.success("Test submitted successfully!")
+        toast.success("Unit test submitted successfully!")
         
         // Update test data to reflect the attempt
         setTestData(prev => prev ? {
@@ -142,11 +118,11 @@ export default function UnitTest({ unitId, userId, unitName, allChaptersComplete
           }
         } : null)
       } else {
-        toast.error(data.error || "Failed to submit test")
+        toast.error(data.error || "Failed to submit unit test")
       }
     } catch (error) {
       console.error("Error submitting test:", error)
-      toast.error("Failed to submit test")
+      toast.error("Failed to submit unit test")
     } finally {
       setIsSubmitting(false)
     }
@@ -174,7 +150,7 @@ export default function UnitTest({ unitId, userId, unitName, allChaptersComplete
         <CardContent className="p-6">
           <div className="flex items-center justify-center">
             <Loader2 className="h-6 w-6 animate-spin mr-2" />
-            <span>Loading test...</span>
+            <span>Loading Unit Test...</span>
           </div>
         </CardContent>
       </Card>
@@ -187,7 +163,7 @@ export default function UnitTest({ unitId, userId, unitName, allChaptersComplete
         <CardContent className="p-6">
           <div className="text-center text-muted-foreground">
             <AlertCircle className="h-8 w-8 mx-auto mb-2" />
-            <p>Test not available for this unit.</p>
+            <p>Unit Test not available for this unit.</p>
           </div>
         </CardContent>
       </Card>
@@ -200,7 +176,7 @@ export default function UnitTest({ unitId, userId, unitName, allChaptersComplete
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Trophy className="h-5 w-5 text-yellow-500" />
-            Test Results
+            Unit Test Results
           </CardTitle>
           <CardDescription>
             Unit: {unitName}
@@ -242,7 +218,7 @@ export default function UnitTest({ unitId, userId, unitName, allChaptersComplete
                 className="mt-4"
                 variant="outline"
               >
-                Retake Test
+                Retake Unit Test
               </Button>
             )}
           </div>
@@ -269,7 +245,7 @@ export default function UnitTest({ unitId, userId, unitName, allChaptersComplete
             <div>
               <h3 className="text-lg font-semibold">Complete All Chapters First</h3>
               <p className="text-muted-foreground">
-                You need to complete all chapters in this unit before taking the test.
+                You need to complete all chapters in this unit before taking the unit test.
               </p>
             </div>
           </div>
@@ -379,7 +355,7 @@ export default function UnitTest({ unitId, userId, unitName, allChaptersComplete
                   ) : (
                     <>
                       <CheckCircle2 className="h-4 w-4 mr-2" />
-                      Submit Test
+                      Submit Unit Test
                     </>
                   )}
                 </Button>
