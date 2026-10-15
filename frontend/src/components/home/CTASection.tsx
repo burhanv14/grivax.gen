@@ -1,3 +1,5 @@
+"use client";
+
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -29,7 +31,7 @@ const CTASection = () => {
           className="flex flex-col items-center justify-between gap-8 rounded-2xl bg-background/80 backdrop-blur-md p-8 shadow-lg dark:bg-muted/50 md:flex-row md:p-12 border border-primary/10"
           initial={{ opacity: 0, y: 50 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
+          viewport={{ once: true }}
           transition={{ duration: 0.8 }}
           whileHover={{ boxShadow: "0 20px 40px rgba(var(--primary-rgb), 0.2)" }}
         >
@@ -48,7 +50,7 @@ const CTASection = () => {
               </Link>
             </Button>
             <Button size="lg" variant="outline" asChild className="group relative overflow-hidden">
-              <Link href="/about">
+              <Link href="#features">
                 <span className="relative z-10">Learn More</span>
                 <span className="absolute inset-0 bg-primary/10 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300"></span>
               </Link>

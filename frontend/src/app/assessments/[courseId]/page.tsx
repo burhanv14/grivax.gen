@@ -21,79 +21,48 @@ import {
 } from 'lucide-react'
 import Loader from '@/components/loader'
 import { toast } from 'sonner'
+import type { AssessmentData, AssessmentResultsData } from '@/types'
 
-interface Question {
-  questionText: string
-  options: string[]
-  correctAnswer: number
-  explanation?: string
-}
-
-interface QuizData {
-  quiz: {
-    quiz_id: string
-    questions: Question[]
-  }
-  hasAttempt: boolean
-  attempt?: {
-    attempt_id: string
-    score: number
-    correctCount: number
-    totalQuestions: number
-    completedAt: string
-    answers: number[]
-  }
-}
-
-interface QuizResult {
-  questionIndex: number
-  questionText: string
-  userAnswer: number
-  correctAnswer: number
-  isCorrect: boolean
-  explanation: string
-  options: string[]
-}
-
-interface QuizResultsData {
-  success: boolean
-  score: number
-  correctAnswers: number
-  totalQuestions: number
-  results: QuizResult[]
-}
-
-export default function QuizPage({ params }: { params: { courseId: string } }) {
+export default function AssessmentPage({ params }: { params: { courseId: string } }) {
   const { data: session, status } = useSession()
   const router = useRouter()
   const { courseId } = params
 
-  const [quizData, setQuizData] = useState<QuizData | null>(null)
+  const [assessmentData, setAssessmentData] = useState<AssessmentData | null>(null)
   const [loading, setLoading] = useState(true)
   const [currentQuestion, setCurrentQuestion] = useState(0)
   const [answers, setAnswers] = useState<number[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [results, setResults] = useState<QuizResultsData | null>(null)
+  const [results, setResults] = useState<AssessmentResultsData | null>(null)
   const [showResults, setShowResults] = useState(false)
   const [courseName, setCourseName] = useState('')
 
   useEffect(() => {
     if (status === 'unauthenticated') {
-      router.push('/login')
+      router.push(`/login?callbackUrl=%2Fassessments%2F${courseId}`)
       return
     }
 
     if (status === 'authenticated') {
-      fetchQuiz()
+      fetchAssessment()
     }
   }, [status, courseId, router])
 
-  const fetchQuiz = async () => {
+  const fetchAssessment = async () => {
     try {
       setLoading(true)
+      const userParam = session?.user?.id 
+        ? `user_id=${encodeURIComponent(session.user.id)}` 
+        : session?.user?.email 
+          ? `email=${encodeURIComponent(session.user.email)}` 
+          : ''
       
-      // Fetch course details first
-      const courseResponse = await fetch('/api/courses/user')
+      // Fetch course details
+      const courseResponse = await fetch(`/api/courses/user${userParam ? `?${userParam}` : ''}`, {
+        headers: {
+          ...(session?.user?.email ? { 'X-User-Email': session.user.email } : {}),
+        }
+      })
       if (courseResponse.ok) {
         const courseData = await courseResponse.json()
         const course = courseData.courses?.find((c: any) => c.course_id === courseId)
@@ -102,24 +71,34 @@ export default function QuizPage({ params }: { params: { courseId: string } }) {
         }
       }
 
-      // Fetch quiz
-      const response = await fetch(`/api/quizzes/${courseId}`)
+      // Fetch assessment
+      const response = await fetch(`/api/assessments/${courseId}${userParam ? `?${userParam}` : ''}`, {
+        headers: {
+          ...(session?.user?.email ? { 'X-User-Email': session.user.email } : {}),
+        }
+      })
       
       if (!response.ok) {
         if (response.status === 404) {
-          toast.error('Quiz not found for this course')
+          toast.error('Assessment not found for this course')
           router.push('/assessments')
           return
         }
-        throw new Error('Failed to fetch quiz')
+        throw new Error('Failed to fetch assessment')
       }
 
       const data = await response.json()
-      setQuizData(data)
+      setAssessmentData(data)
       
+      const questions = data.assessment?.questions || data.quiz?.questions || []
+
       // If user already has an attempt, show results
       if (data.hasAttempt && data.attempt) {
-        const attemptResponse = await fetch(`/api/quizzes/${courseId}/attempt`)
+        const attemptResponse = await fetch(`/api/assessments/${courseId}/attempt${userParam ? `?${userParam}` : ''}`, {
+          headers: {
+            ...(session?.user?.email ? { 'X-User-Email': session.user.email } : {}),
+          }
+        })
         if (attemptResponse.ok) {
           const attemptData = await attemptResponse.json()
           setResults({
@@ -132,17 +111,21 @@ export default function QuizPage({ params }: { params: { courseId: string } }) {
           setShowResults(true)
         }
       } else {
-        // Initialize answers array for new quiz
-        setAnswers(new Array(data.quiz.questions.length).fill(-1))
+        // Initialize answers array for new assessment
+        setAnswers(new Array(questions.length).fill(-1))
       }
     } catch (error) {
-      console.error('Error fetching quiz:', error)
-      toast.error('Failed to load quiz')
+      console.error('Error fetching assessment:', error)
+      toast.error('Failed to load assessment')
       router.push('/assessments')
     } finally {
       setLoading(false)
     }
   }
+
+  const questions = assessmentData?.assessment?.questions || assessmentData?.quiz?.questions || []
+  const currentQ = questions[currentQuestion]
+  const progress = questions.length > 0 ? ((currentQuestion + 1) / questions.length) * 100 : 0
 
   const handleAnswerSelect = (questionIndex: number, answerIndex: number) => {
     const newAnswers = [...answers]
@@ -151,7 +134,7 @@ export default function QuizPage({ params }: { params: { courseId: string } }) {
   }
 
   const handleNext = () => {
-    if (currentQuestion < (quizData?.quiz.questions.length || 0) - 1) {
+    if (currentQuestion < questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1)
     }
   }
@@ -163,7 +146,7 @@ export default function QuizPage({ params }: { params: { courseId: string } }) {
   }
 
   const handleSubmit = async () => {
-    if (!quizData) return
+    if (!assessmentData) return
 
     // Check if all questions are answered
     const unansweredQuestions = answers.findIndex(answer => answer === -1)
@@ -176,34 +159,38 @@ export default function QuizPage({ params }: { params: { courseId: string } }) {
     try {
       setIsSubmitting(true)
       
-      const response = await fetch(`/api/quizzes/${courseId}/submit`, {
+      const response = await fetch(`/api/assessments/${courseId}/submit`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(session?.user?.email ? { 'X-User-Email': session.user.email } : {}),
         },
-        body: JSON.stringify({ answers }),
+        body: JSON.stringify({ 
+          answers,
+          user_id: session?.user?.id,
+          email: session?.user?.email,
+        }),
       })
 
       if (!response.ok) {
-        throw new Error('Failed to submit quiz')
+        throw new Error('Failed to submit assessment')
       }
 
       const resultsData = await response.json()
       setResults(resultsData)
       setShowResults(true)
       
-      toast.success(`Quiz completed! Your score: ${resultsData.score}%`)
+      toast.success(`Assessment completed! Your score: ${resultsData.score}%`)
     } catch (error) {
-      console.error('Error submitting quiz:', error)
-      toast.error('Failed to submit quiz')
+      console.error('Error submitting assessment:', error)
+      toast.error('Failed to submit assessment')
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  const handleRetakeQuiz = () => {
-    // For now, just show message that retaking is not allowed
-    toast.error('Retaking quizzes is not allowed. You can only review your previous attempt.')
+  const handleRetakeAssessment = () => {
+    toast.error('Retaking assessments is not allowed. You can only review your previous attempt.')
   }
 
   const getScoreColor = (score: number) => {
@@ -226,14 +213,14 @@ export default function QuizPage({ params }: { params: { courseId: string } }) {
     )
   }
 
-  if (!quizData) {
+  if (!assessmentData || questions.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Card className="max-w-md">
           <CardContent className="p-6 text-center">
             <AlertCircle className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold mb-2">Quiz Not Found</h3>
-            <p className="text-gray-600 mb-4">The quiz for this course could not be found.</p>
+            <h3 className="text-xl font-semibold mb-2">Assessment Not Found</h3>
+            <p className="text-gray-600 mb-4">The assessment for this course could not be found.</p>
             <Button onClick={() => router.push('/assessments')}>
               Back to Assessments
             </Button>
@@ -253,7 +240,7 @@ export default function QuizPage({ params }: { params: { courseId: string } }) {
               <div className="flex items-center justify-center space-x-3 mb-4">
                 <Trophy className={`h-12 w-12 ${getScoreColor(results.score)}`} />
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                  Quiz Results
+                  Assessment Results
                 </h1>
               </div>
               <p className="text-lg text-gray-600 dark:text-gray-300">
@@ -281,13 +268,11 @@ export default function QuizPage({ params }: { params: { courseId: string } }) {
                 </div>
 
                 <div className="flex justify-center space-x-4">
-                  <Button onClick={handleRetakeQuiz} variant="outline">
+                  <Button onClick={handleRetakeAssessment} variant="outline">
                     <RefreshCw className="h-4 w-4 mr-2" />
-                    Retake Quiz
+                    Retake Assessment
                   </Button>
-                  <Button onClick={() => {
-                    router.push('/assessments')
-                  }}>
+                  <Button onClick={() => router.push('/assessments')}>
                     Back to Assessments
                   </Button>
                 </div>
@@ -300,7 +285,7 @@ export default function QuizPage({ params }: { params: { courseId: string } }) {
                 Detailed Results
               </h2>
               
-              {results.results.map((result, index) => (
+              {results.results?.map((result, index) => (
                 <Card key={index} className={`border-l-4 ${
                   result.isCorrect ? 'border-l-green-500' : 'border-l-red-500'
                 }`}>
@@ -325,7 +310,7 @@ export default function QuizPage({ params }: { params: { courseId: string } }) {
                   
                   <CardContent className="space-y-4">
                     <div className="grid gap-2">
-                      {result.options.map((option, optionIndex) => (
+                      {result.options?.map((option, optionIndex) => (
                         <div
                           key={optionIndex}
                           className={`p-3 rounded-lg border ${
@@ -343,18 +328,19 @@ export default function QuizPage({ params }: { params: { courseId: string } }) {
                             {optionIndex === result.userAnswer && !result.isCorrect && (
                               <XCircle className="h-4 w-4 text-red-600" />
                             )}
+                            <span className="font-medium">
+                              {String.fromCharCode(65 + optionIndex)}.
+                            </span>
                             <span>{option}</span>
                           </div>
                         </div>
                       ))}
                     </div>
-                    
+
                     {result.explanation && (
-                      <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
-                        <p className="text-sm font-medium text-blue-800 dark:text-blue-300 mb-1">
-                          Explanation:
-                        </p>
-                        <p className="text-blue-700 dark:text-blue-400">
+                      <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                        <p className="text-sm text-blue-800 dark:text-blue-300">
+                          <span className="font-medium">Explanation: </span>
                           {result.explanation}
                         </p>
                       </div>
@@ -369,17 +355,14 @@ export default function QuizPage({ params }: { params: { courseId: string } }) {
     )
   }
 
-  const progress = ((currentQuestion + 1) / quizData.quiz.questions.length) * 100
-  const currentQ = quizData.quiz.questions[currentQuestion]
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
-          {/* Header */}
+          {/* Top Bar */}
           <div className="flex items-center justify-between mb-8">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => router.push('/assessments')}
               className="flex items-center space-x-2"
             >
@@ -391,12 +374,12 @@ export default function QuizPage({ params }: { params: { courseId: string } }) {
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
                 {courseName}
               </h1>
-              <p className="text-gray-600 dark:text-gray-400">Assessment</p>
+              <p className="text-gray-600 dark:text-gray-400">Course Assessment</p>
             </div>
             
             <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
               <Clock className="h-4 w-4" />
-              <span>{currentQuestion + 1} of {quizData.quiz.questions.length}</span>
+              <span>{currentQuestion + 1} of {questions.length}</span>
             </div>
           </div>
 
@@ -416,7 +399,7 @@ export default function QuizPage({ params }: { params: { courseId: string } }) {
                 Question {currentQuestion + 1}
               </CardTitle>
               <CardDescription className="text-lg font-medium text-gray-900 dark:text-white">
-                {currentQ.questionText}
+                {currentQ?.questionText || currentQ?.question}
               </CardDescription>
             </CardHeader>
             
@@ -426,13 +409,14 @@ export default function QuizPage({ params }: { params: { courseId: string } }) {
                 onValueChange={(value) => handleAnswerSelect(currentQuestion, parseInt(value))}
                 className="space-y-4"
               >
-                {currentQ.options.map((option: string, index: number) => (
+                {currentQ?.options?.map((option: string, index: number) => (
                   <div key={index} className="flex items-center space-x-3 p-4 rounded-lg border hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                     <RadioGroupItem value={index.toString()} id={`option-${index}`} />
                     <Label 
                       htmlFor={`option-${index}`} 
                       className="flex-1 cursor-pointer text-base"
                     >
+                      <span className="font-medium mr-2">{String.fromCharCode(65 + index)}.</span>
                       {option}
                     </Label>
                   </div>
@@ -454,7 +438,7 @@ export default function QuizPage({ params }: { params: { courseId: string } }) {
             </Button>
 
             <div className="flex space-x-2">
-              {quizData.quiz.questions.map((_: any, index: number) => (
+              {questions.map((_: any, index: number) => (
                 <button
                   key={index}
                   onClick={() => setCurrentQuestion(index)}
@@ -471,7 +455,7 @@ export default function QuizPage({ params }: { params: { courseId: string } }) {
               ))}
             </div>
 
-            {currentQuestion === quizData.quiz.questions.length - 1 ? (
+            {currentQuestion === questions.length - 1 ? (
               <Button
                 onClick={handleSubmit}
                 disabled={isSubmitting || answers.includes(-1)}
@@ -484,7 +468,7 @@ export default function QuizPage({ params }: { params: { courseId: string } }) {
                   </>
                 ) : (
                   <>
-                    <span>Submit Quiz</span>
+                    <span>Submit Assessment</span>
                     <CheckCircle className="h-4 w-4" />
                   </>
                 )}
@@ -492,7 +476,7 @@ export default function QuizPage({ params }: { params: { courseId: string } }) {
             ) : (
               <Button
                 onClick={handleNext}
-                disabled={currentQuestion === quizData.quiz.questions.length - 1}
+                disabled={currentQuestion === questions.length - 1}
                 className="flex items-center space-x-2"
               >
                 <span>Next</span>

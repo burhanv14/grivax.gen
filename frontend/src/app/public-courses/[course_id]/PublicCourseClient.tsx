@@ -27,63 +27,7 @@ import {
 import Link from "next/link"
 import Image from "next/image"
 import { toast } from "sonner"
-
-interface PublicCourse {
-  public_course_id: string
-  teacher_id: string
-  title: string
-  description?: string
-  image: string
-  isPublished: boolean
-  createdAt: Date
-  updatedAt: Date
-  teacher: {
-    user_id: string
-    name?: string
-    email: string
-  }
-  units: PublicUnit[]
-  enrollments: PublicCourseEnrollment[]
-  _count: {
-    enrollments: number
-  }
-}
-
-interface PublicUnit {
-  public_unit_id: string
-  public_course_id: string
-  name: string
-  order: number
-  chapters: PublicChapter[]
-}
-
-interface PublicChapter {
-  public_chapter_id: string
-  public_unit_id: string
-  name: string
-  youtubeVidLink: string
-  readingMaterial?: string
-  order: number
-}
-
-interface PublicCourseEnrollment {
-  enrollment_id: string
-  public_course_id: string
-  student_id: string
-  enrolledAt: Date
-  progress: number
-  student: {
-    user_id: string
-    name?: string
-    email: string
-  }
-}
-
-interface Student {
-  user_id: string
-  name?: string
-  email: string
-}
+import type { PublicCourse, PublicUnit, PublicChapter, PublicCourseEnrollment, Student } from "@/types"
 
 export default function PublicCourseClient({ 
   course, 

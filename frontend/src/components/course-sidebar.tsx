@@ -8,37 +8,9 @@ import { Progress } from "@/components/ui/progress"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import type { Course, Unit, Chapter } from "@/types"
 
-// Define interfaces for the course data structure
-interface Chapter {
-  chapter_id: string
-  name: string
-  description?: string
-  youtubeVidLink: string
-  readingMaterial: string | null
-  unit_id: string
-  isCompleted: boolean
-}
-
-interface Unit {
-  unit_id: string
-  name: string
-  course_id: string
-  chapters: Chapter[]
-  test?: {
-    test_id: string
-    questions: any[]
-  }
-}
-
-interface Course {
-  course_id: string
-  title: string
-  user_id: string
-  units: Unit[]
-}
-
-interface CourseSidebarProps {
+export interface CourseSidebarProps {
   course: Course
   expandedUnits: number[]
   toggleUnit: (unitIndex: number) => void

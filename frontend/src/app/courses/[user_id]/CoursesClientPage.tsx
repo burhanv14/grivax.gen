@@ -12,69 +12,7 @@ import Loader from "@/components/loader"
 import { Input } from "@/components/ui/input"
 import { useSession } from "next-auth/react"
 import { toast } from "sonner"
-
-// Define the Course type
-interface Course {
-  course_id: string
-  user_id: string
-  genId: string
-  title: string
-  image: string
-  createdAt: Date
-  updatedAt: Date
-}
-
-// Define the PublicCourse type
-interface PublicCourse {
-  public_course_id: string
-  teacher_id: string
-  title: string
-  description?: string
-  image: string
-  isPublished: boolean
-  createdAt: Date
-  updatedAt: Date
-  teacher: {
-    user_id: string
-    name?: string
-    email: string
-  }
-  units: PublicUnit[]
-  enrollments: PublicCourseEnrollment[]
-  _count: {
-    enrollments: number
-  }
-}
-
-interface PublicUnit {
-  public_unit_id: string
-  public_course_id: string
-  name: string
-  order: number
-  chapters: PublicChapter[]
-}
-
-interface PublicChapter {
-  public_chapter_id: string
-  public_unit_id: string
-  name: string
-  youtubeVidLink: string
-  readingMaterial?: string
-  order: number
-}
-
-interface PublicCourseEnrollment {
-  enrollment_id: string
-  public_course_id: string
-  student_id: string
-  enrolledAt: Date
-  progress: number
-  student: {
-    user_id: string
-    name?: string
-    email: string
-  }
-}
+import type { Course, PublicCourse, PublicUnit, PublicChapter, PublicCourseEnrollment } from "@/types"
 
 // Utility function to format course data consistently
 const formatCourseData = (rawCourseData: any): Course => {
@@ -197,21 +135,27 @@ export default function CoursesClientPage({ params }: { params: { user_id: strin
   // Function to fetch user role
   const fetchUserRole = async (): Promise<string> => {
     try {
-      const response = await fetch('/api/user', {
+      const userParam = userId 
+        ? `user_id=${encodeURIComponent(userId)}` 
+        : session?.user?.email 
+          ? `email=${encodeURIComponent(session.user.email)}` 
+          : '';
+      const response = await fetch(`/api/user${userParam ? `?${userParam}` : ''}`, {
         method: 'GET',
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
+          ...(session?.user?.email ? { 'X-User-Email': session.user.email } : {}),
         }
       })
       
       if (response.ok) {
         const userData = await response.json()
-        return userData.role || "STUDENT"
+        return userData.role || session?.user?.role || "STUDENT"
       }
-      return "STUDENT"
+      return session?.user?.role || "STUDENT"
     } catch (error) {
       console.error("Error fetching user role:", error)
-      return "STUDENT"
+      return session?.user?.role || "STUDENT"
     }
   }
 
@@ -499,11 +443,17 @@ export default function CoursesClientPage({ params }: { params: { user_id: strin
               </motion.div>
             </div>
 
-            <div className="flex justify-end mb-4">
-              <Button asChild size="lg" className="px-6">
+            <div className="flex justify-end gap-3 mb-4">
+              <Button asChild variant="outline" size="lg" className="px-5">
+                <Link href={`/create-public-course/${userId}`}>
+                  <Plus className="mr-2 h-5 w-5" />
+                  <span>Build Manually</span>
+                </Link>
+              </Button>
+              <Button asChild size="lg" className="px-5">
                 <Link href={`/generate-public-course/${userId}`}>
                   <Plus className="mr-2 h-5 w-5" />
-                  <span>Generate Public Course</span>
+                  <span>Generate with AI</span>
                 </Link>
               </Button>
             </div>
@@ -1518,30 +1468,21 @@ const EmptyPublicCourseState = ({
 
       {!isStudentView && (
         <motion.div
+          className="flex flex-col sm:flex-row gap-3 justify-center items-center"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.5 }}
         >
-          <Button asChild size="lg" className="px-8 relative overflow-hidden group">
+          <Button asChild variant="outline" size="lg" className="px-6">
+            <Link href={`/create-public-course/${userId}`}>
+              <Plus className="mr-2 h-5 w-5" />
+              <span>Build Manually</span>
+            </Link>
+          </Button>
+          <Button asChild size="lg" className="px-6 relative overflow-hidden group">
             <Link href={`/generate-public-course/${userId}`}>
-              <motion.span
-                className="absolute inset-0 w-full h-full bg-gradient-to-r from-primary/10 to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                whileHover={{ scale: 1.05 }}
-              />
-              <motion.div
-                animate={{
-                  rotate: [0, 90],
-                }}
-                transition={{
-                  duration: 0.3,
-                  repeat: 0,
-                  repeatType: "reverse",
-                }}
-                className="mr-2"
-              >
-                <Plus className="h-5 w-5" />
-              </motion.div>
-              <span>Generate Your First Public Course</span>
+              <Plus className="mr-2 h-5 w-5" />
+              <span>Generate with AI</span>
             </Link>
           </Button>
         </motion.div>

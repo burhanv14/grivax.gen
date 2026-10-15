@@ -410,7 +410,7 @@ export default function LoginPage() {
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4, duration: 0.5 }}>
                 <h2 className="font-poppins text-2xl font-bold">Unlock Your Learning Potential</h2>
                 <p className="mt-4 text-muted-foreground">
-                  Access personalized courses, adaptive quizzes, and track your progress with Grivax's intelligent
+                  Access personalized courses, unit tests, and assessments, and track your progress with Grivax's intelligent
                   learning platform.
                 </p>
 

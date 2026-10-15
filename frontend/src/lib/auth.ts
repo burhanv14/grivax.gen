@@ -5,10 +5,8 @@ import { redirect, useRouter } from "next/navigation";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import GithubProvider from "next-auth/providers/github";
-import bcrypt from "bcryptjs";
-import crypto from "crypto";
 
-import prisma from "./prisma";
+const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8080";
 
 // Extend the built-in session types
 declare module "next-auth" {
@@ -41,30 +39,23 @@ export const authConfig: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        // Validate input credentials
         if (!credentials || !credentials.email || !credentials.password) {
           throw new Error("Invalid credentials");
         }
 
-        // Find user in the database by email
-        const dbUser = await prisma.user.findFirst({
-          where: { email: credentials.email },
+        const res = await fetch(`${BACKEND_URL}/api/auth/verify-credentials`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: credentials.email, password: credentials.password }),
         });
 
-        // If no user is found, throw a "User not found" error
-        if (!dbUser) {
-          throw new Error("User not found");
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || "Invalid credentials");
         }
 
-        // Compare the entered password with the stored hashed password using bcrypt
-        const isValidPassword = await bcrypt.compare(credentials.password, dbUser.password);
-        if (!isValidPassword) {
-          throw new Error("Invalid password");
-        }
-
-        // Exclude sensitive fields before returning the user object
-        const { password, createdAt, user_id, ...dbUserWithoutPassword } = dbUser;
-        return dbUserWithoutPassword as unknown as User;
+        const dbUser = await res.json();
+        return dbUser as unknown as User;
       },
     }),
     GoogleProvider({
@@ -85,64 +76,45 @@ export const authConfig: NextAuthOptions = {
   ],
   callbacks: {
     async signIn({ user, account, profile }) {
-      // Only handle OAuth sign-ins (Google and GitHub)
       if (account?.provider === "google" || account?.provider === "github") {
         try {
-          // Check if user already exists
-          const existingUser = await prisma.user.findUnique({
-            where: { email: user.email as string },
+          const res = await fetch(`${BACKEND_URL}/api/auth/oauth-user`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email: user.email,
+              name: user.name,
+            }),
           });
-
-          if (!existingUser) {
-            // Generate a unique user_id
-            const user_id = crypto.randomBytes(5).toString("hex"); // 10-character hex string
-            
-            // Get role from sessionStorage (this will be handled on the client side)
-            // For now, default to STUDENT - we'll handle role selection in a separate flow
-            const role = "STUDENT";
-            
-            // Create new user in database
-            await prisma.user.create({
-              data: {
-                user_id,
-                email: user.email as string,
-                name: user.name as string,
-                password: "", // No password for OAuth users
-                role: role,
-              },
-            });
-          }
-          
-          return true;
+          return res.ok;
         } catch (error) {
           console.error("Error during OAuth sign-in:", error);
           return false;
         }
       }
-      
-      // For credentials provider, just allow sign-in
       return true;
     },
     async session({ session, token }) {
-      // Add user_id and role to the session if available
-      if (session.user) {
-        const dbUser = await prisma.user.findUnique({
-          where: { email: session.user.email as string },
-        });
-        
-        if (dbUser) {
-          session.user.id = dbUser.user_id;
-          session.user.role = dbUser.role;
+      if (session.user?.email) {
+        try {
+          const res = await fetch(`${BACKEND_URL}/api/user?email=${encodeURIComponent(session.user.email)}`, {
+            cache: "no-store"
+          });
+          if (res.ok) {
+            const dbUser = await res.json();
+            session.user.id = dbUser.user_id;
+            session.user.role = dbUser.role;
+          }
+        } catch (error) {
+          console.error("Error updating session with user role:", error);
         }
       }
-      
       return session;
     },
     async redirect({ url, baseUrl }) {
-      // Handle redirect after sign in
-      if (url.startsWith("/")) return `${baseUrl}${url}`
-      else if (new URL(url).origin === baseUrl) return url
-      return baseUrl
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      else if (new URL(url).origin === baseUrl) return url;
+      return baseUrl;
     },
   },
   session: {
@@ -166,15 +138,14 @@ export function loginIsRequiredClient() {
   }
 }
 
-// Define a type that matches what we get from getServerSession
 export type SessionUser = {
-  name?: string | null
-  email?: string | null
-  image?: string | null
-  role?: string
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+  role?: string;
 }
 
 export const getUserSession = async (): Promise<SessionUser | null> => {
-  const authUserSession = await getServerSession()
-  return authUserSession?.user || null
+  const authUserSession = await getServerSession();
+  return authUserSession?.user || null;
 }

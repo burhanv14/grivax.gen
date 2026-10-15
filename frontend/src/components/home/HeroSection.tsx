@@ -1,6 +1,9 @@
+"use client";
+
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import InteractiveCarousel from "@/components/interactive-carousel";
@@ -10,13 +13,14 @@ const HeroSection = () => {
   const router = useRouter();
   const { data: session, status } = useSession();
 
-  const handleExploreClick = async () => {
+  const handleExploreClick = () => {
     if (status === "loading") return;
 
-    if (session?.user?.id) {
-      router.push(`/courses/${session.user.id}`);
+    if (status === "authenticated") {
+      const userId = (session?.user as any)?.id;
+      router.push(userId ? `/courses/${userId}` : "/courses");
     } else {
-      router.push("/login?callbackUrl=" + encodeURIComponent("/courses"));
+      router.push("/courses");
     }
   };
 
@@ -50,10 +54,7 @@ const HeroSection = () => {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.7, duration: 0.8 }}
               >
-                Learn Smarter with
-                <span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent animate-gradient-shift bg-[length:200%_auto]">
-                  Dynamic Education
-                </span>
+                Learn Smarter with <span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent animate-gradient-shift bg-[length:200%_auto]">Dynamic Education</span>
               </motion.h1>
               <motion.p
                 className="max-w-[600px] text-muted-foreground md:text-xl"
@@ -61,7 +62,7 @@ const HeroSection = () => {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.9, duration: 0.8 }}
               >
-                Grivax generates personalized courses and quizzes to help you master any subject with adaptive learning technology.
+                Grivax generates personalized courses, unit tests, and comprehensive assessments to help you master any subject with adaptive learning technology.
               </motion.p>
             </div>
             <motion.div
@@ -76,10 +77,10 @@ const HeroSection = () => {
                 <ArrowRight className="ml-2 h-4 w-4 relative z-10 group-hover:translate-x-1 transition-transform duration-300" />
               </Button>
               <Button size="lg" variant="outline" asChild className="group relative overflow-hidden">
-                <a href="/quizzes">
-                  <span className="relative z-10">Try a Quiz</span>
+                <Link href="/assessments">
+                  <span className="relative z-10">Assessments</span>
                   <span className="absolute inset-0 bg-primary/10 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300"></span>
-                </a>
+                </Link>
               </Button>
             </motion.div>
           </motion.div>
@@ -115,7 +116,7 @@ const HeroSection = () => {
             >
               <div className="flex items-center gap-2 rounded-md bg-purple-600/10 p-2 text-purple-600 dark:text-purple-400">
                 <Brain className="h-5 w-5" />
-                <span className="text-sm font-medium">Adaptive Quizzes</span>
+                <span className="text-sm font-medium">Unit Tests & Assessments</span>
               </div>
             </motion.div>
           </motion.div>

@@ -1,8 +1,11 @@
-import { motion } from "framer-motion";
-import { TestimonialSlider1 } from "@/components/testimonial-slider1";
-import { Star, Award, Heart } from "lucide-react";
+"use client";
 
-const testimonials = [
+import { motion } from "framer-motion";
+import { TestimonialSlider } from "@/components/testimonial-slider";
+import { Star, Award, Heart } from "lucide-react";
+import type { Testimonial } from "@/types";
+
+const testimonials: Testimonial[] = [
 	{
 		id: 1,
 		name: "John Doe",
@@ -53,7 +56,7 @@ const TestimonialsSection = () => {
 					className="mb-12 text-center"
 					initial={{ opacity: 0, y: 20 }}
 					whileInView={{ opacity: 1, y: 0 }}
-					viewport={{ once: true, margin: "-100px" }}
+					viewport={{ once: true }}
 					transition={{ duration: 0.8 }}
 				>
 					<h2 className="font-poppins text-3xl font-bold tracking-tight sm:text-4xl">
@@ -67,10 +70,10 @@ const TestimonialsSection = () => {
 				<motion.div
 					initial={{ opacity: 0 }}
 					whileInView={{ opacity: 1 }}
-					viewport={{ once: true, margin: "-100px" }}
+					viewport={{ once: true }}
 					transition={{ duration: 1 }}
 				>
-					<TestimonialSlider1 testimonials={testimonials} />
+					<TestimonialSlider testimonials={testimonials} />
 				</motion.div>
 			</div>
 		</section>

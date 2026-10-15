@@ -3,8 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import EnrolledCourses from "@/components/enrolled-courses"
 import { getServerSession } from "next-auth"
 import { authConfig } from "@/lib/auth"
-import prisma from "@/lib/prisma"
-import { notFound, redirect } from "next/navigation"
+import { redirect } from "next/navigation"
+import { BACKEND_URL } from "@/lib/backend"
 
 export const metadata = {
   title: "Dashboard | Grivax",
@@ -19,59 +19,44 @@ export default async function DashboardPage({
   const session = await getServerSession(authConfig)
   
   if (!session?.user?.email) {
-    redirect("/login?callbackUrl=" + encodeURIComponent("/dashboard/[user_id]"))
+    redirect("/login?callbackUrl=" + encodeURIComponent(`/dashboard/${params.user_id}`))
   }
 
-  // Find user in database by email
-  const dbUser = await prisma.user.findUnique({
-    where: { email: session.user.email },
-  })
-
-  if (!dbUser) {
-    redirect("/login?callbackUrl=" + encodeURIComponent("/dashboard/[user_id]"))
-  }
-
-  // Verify the user is accessing their own dashboard
-  if (dbUser.user_id !== params.user_id) {
-    redirect("/login?callbackUrl=" + encodeURIComponent("/dashboard/[user_id]"))
-  }
-
-  // Fetch user's courses with progress
-  let courses = await prisma.course.findMany({
-    where: {
-      user_id: dbUser.user_id,
-    },
-    include: {
-      units: {
-        include: {
-          chapters: true
-        }
-      }
-    },
-    orderBy: {
-      updatedAt: 'desc'
+  // Fetch courses from Java backend
+  let courses: any[] = []
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/courses/${params.user_id}`, {
+      cache: "no-store",
+    })
+    if (res.ok) {
+      courses = await res.json()
     }
-  })
-  if (courses.length > 4) {
-    courses = courses.slice(0, 4);
+  } catch (error) {
+    console.error("Error fetching dashboard courses:", error)
   }
+
+  const displayCourses = courses.slice(0, 4)
+
   // Format courses for the EnrolledCourses component
-  const enrolledCourses = courses.map(course => {
-    const totalChapters = course.units.reduce((acc, unit) => acc + unit.chapters.length, 0)
-    const completedChapters = course.units.reduce((acc, unit) => 
-      acc + unit.chapters.filter(ch => ch.isCompleted).length, 0
+  const enrolledCourses = displayCourses.map((course: any) => {
+    const units = course.units || []
+    const totalChapters = units.reduce((acc: number, unit: any) => acc + (unit.chapters ? unit.chapters.length : 0), 0)
+    const completedChapters = units.reduce((acc: number, unit: any) => 
+      acc + (unit.chapters ? unit.chapters.filter((ch: any) => ch.isCompleted).length : 0), 0
     )
-    const progress = Math.round((completedChapters / totalChapters) * 100)
+    const progress = totalChapters > 0 ? Math.round((completedChapters / totalChapters) * 100) : 0
     const isCompleted = progress === 100
 
     // Find the next incomplete chapter
     let nextLesson = "Course Completed"
     if (!isCompleted) {
-      for (const unit of course.units) {
-        const incompleteChapter = unit.chapters.find(ch => !ch.isCompleted)
-        if (incompleteChapter) {
-          nextLesson = incompleteChapter.name
-          break
+      for (const unit of units) {
+        if (unit.chapters) {
+          const incompleteChapter = unit.chapters.find((ch: any) => !ch.isCompleted)
+          if (incompleteChapter) {
+            nextLesson = incompleteChapter.name
+            break
+          }
         }
       }
     }
@@ -81,23 +66,26 @@ export default async function DashboardPage({
       title: course.title,
       image: course.image,
       progress,
-      lastActivity: new Date(course.updatedAt).toLocaleDateString(),
+      lastActivity: course.updatedAt ? new Date(course.updatedAt).toLocaleDateString() : new Date().toLocaleDateString(),
       nextLesson,
       isCompleted
     }
   })
+
+  const userName = session.user?.name || "Learner"
+  const userRole = session.user?.role || "STUDENT"
 
   return (
     <div className="container py-8">
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Welcome back, {dbUser.name || 'Learner'}!</h1>
+            <h1 className="text-3xl font-bold">Welcome back, {userName}!</h1>
             <p className="text-muted-foreground">Track your learning progress and achievements</p>
           </div>
           <div className="flex items-center space-x-2 px-3 py-2 rounded-lg bg-primary/10 text-primary">
             <User className="h-4 w-4" />
-            <span className="text-sm font-medium capitalize">{dbUser.role?.toLowerCase() || 'Student'}</span>
+            <span className="text-sm font-medium capitalize">{userRole.toLowerCase()}</span>
           </div>
         </div>
       </div>
@@ -147,7 +135,7 @@ export default async function DashboardPage({
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {Math.round(enrolledCourses.reduce((acc, course) => acc + course.progress, 0) / enrolledCourses.length || 0)}%
+              {enrolledCourses.length > 0 ? Math.round(enrolledCourses.reduce((acc, course) => acc + course.progress, 0) / enrolledCourses.length) : 0}%
             </div>
             <p className="text-xs text-muted-foreground">Across all courses</p>
           </CardContent>
@@ -159,4 +147,4 @@ export default async function DashboardPage({
       </div>
     </div>
   )
-} 
+}

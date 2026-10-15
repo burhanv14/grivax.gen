@@ -19,22 +19,7 @@ import {
   Loader2
 } from "lucide-react"
 import { toast } from "sonner"
-
-interface CourseModule {
-  week: number
-  title: string
-  objectives: string[]
-  timeSpent: string
-}
-
-interface CourseData {
-  course_id: string
-  courseStructure: {
-    title: string
-    description: string
-    modules: CourseModule[]
-  }
-}
+import type { CourseModule, CourseData } from "@/types"
 
 function ModuleCard({ module, index }: { module: CourseModule; index: number }) {
   return (

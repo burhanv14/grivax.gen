@@ -8,18 +8,9 @@ import { Button } from "@/components/ui/button"
 import { CheckCircle2 } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useSession } from "next-auth/react"
+import type { EnrolledCourse } from "@/types"
 
-interface EnrolledCourse {
-  id: string
-  title: string
-  image: string
-  progress: number
-  lastActivity: string
-  nextLesson: string
-  isCompleted: boolean
-}
-
-interface EnrolledCoursesProps {
+export interface EnrolledCoursesProps {
   courses: EnrolledCourse[]
 }
 
@@ -47,12 +38,14 @@ export default function EnrolledCourses({ courses }: EnrolledCoursesProps) {
     fetchUserId()
   }, [session?.user?.email])
 
+  const effectiveUserId = userId || (session?.user as any)?.id || ""
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <h3 className="text-2xl font-semibold tracking-tight">Enrolled Courses</h3>
         <Button variant="outline" size="sm" asChild>
-          <Link href={userId ? `/courses/${userId}` : '#'}>Browse More Courses</Link>
+          <Link href={effectiveUserId ? `/courses/${effectiveUserId}` : '/courses'}>Browse More Courses</Link>
         </Button>
       </div>
 
@@ -101,7 +94,7 @@ export default function EnrolledCourses({ courses }: EnrolledCoursesProps) {
                   </div>
                   <div className="pt-4">
                     <Button size="sm" className="w-full sm:w-auto" asChild>
-                      <Link href={userId ? `/courses/${userId}/${course.id}` : '#'}>
+                      <Link href={effectiveUserId ? `/courses/${effectiveUserId}/${course.id}` : `/courses`}>
                         {course.isCompleted ? 'Review Course' : 'Continue'}
                       </Link>
                     </Button>

@@ -16,37 +16,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import CourseSidebar from "@/components/course-sidebar"
 import { MarkdownContent } from "@/components/MarkdownContent"
 import UnitTest from "@/components/unit-test"
-
-// Define interfaces for the course data structure
-interface Chapter {
-  chapter_id: string
-  name: string
-  description?: string
-  youtubeVidLink: string
-  readingMaterial: string | null
-  unit_id: string
-  isCompleted: boolean
-}
-
-interface Unit {
-  unit_id: string
-  name: string
-  course_id: string
-  chapters: Chapter[]
-  progress: number
-  test?: {
-    test_id: string
-    questions: any[]
-  }
-}
-
-interface Course {
-  course_id: string
-  title: string
-  user_id: string
-  units: Unit[]
-  progress: number
-}
+import type { Course, Unit, Chapter } from "@/types"
 
 // This would normally come from your database
 // For this example, we'll use the props passed from the server component
