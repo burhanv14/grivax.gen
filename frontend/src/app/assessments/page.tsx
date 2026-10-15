@@ -9,51 +9,18 @@ import { Badge } from '@/components/ui/badge'
 import { BookOpen, AlertCircle } from 'lucide-react'
 import Loader from '@/components/loader'
 import { toast } from 'sonner'
-
-interface Course {
-  course_id: string
-  title: string
-  image: string
-  progress: number
-  units: Array<{
-    unit_id: string
-    name: string
-    chapters: Array<{
-      chapter_id: string
-      name: string
-      isCompleted: boolean
-    }>
-  }>
-  quiz?: {
-    quiz_id: string
-    questions: any[]
-    attempts: Array<{
-      attempt_id: string
-      score: number
-      correctCount: number
-      totalQuestions: number
-      completedAt: string
-    }>
-  }
-  createdAt: string
-}
-
-interface QuizCompletion {
-  courseId: string
-  completed: boolean
-  score?: number
-}
+import type { Course } from '@/types'
 
 export default function AssessmentsPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [courses, setCourses] = useState<Course[]>([])
   const [loading, setLoading] = useState(true)
-  const [generatingQuiz, setGeneratingQuiz] = useState<string | null>(null)
+  const [generatingAssessment, setGeneratingAssessment] = useState<string | null>(null)
 
   useEffect(() => {
     if (status === 'unauthenticated') {
-      router.push('/login')
+      router.push('/login?callbackUrl=%2Fassessments')
       return
     }
 
@@ -65,7 +32,16 @@ export default function AssessmentsPage() {
   const fetchUserCourses = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/courses/user')
+      const userParam = session?.user?.id 
+        ? `user_id=${encodeURIComponent(session.user.id)}` 
+        : session?.user?.email 
+          ? `email=${encodeURIComponent(session.user.email)}` 
+          : ''
+      const response = await fetch(`/api/courses/user${userParam ? `?${userParam}` : ''}`, {
+        headers: {
+          ...(session?.user?.email ? { 'X-User-Email': session.user.email } : {}),
+        }
+      })
       
       if (!response.ok) {
         throw new Error('Failed to fetch courses')
@@ -81,59 +57,73 @@ export default function AssessmentsPage() {
     }
   }
 
-  const getQuizAttempt = (course: Course) => {
-    return course.quiz?.attempts?.[0] || null
+  const getAssessmentAttempt = (course: Course) => {
+    return course.assessment?.attempts?.[0] || course.quiz?.attempts?.[0] || null
   }
 
-  const hasQuizAttempt = (course: Course) => {
-    return !!getQuizAttempt(course)
+  const hasAssessmentAttempt = (course: Course) => {
+    return !!getAssessmentAttempt(course)
   }
 
   const handleTakeAssessment = async (courseId: string) => {
     try {
-      setGeneratingQuiz(courseId)
+      setGeneratingAssessment(courseId)
+      const userParam = session?.user?.id 
+        ? `user_id=${encodeURIComponent(session.user.id)}` 
+        : session?.user?.email 
+          ? `email=${encodeURIComponent(session.user.email)}` 
+          : ''
       
-      // First, try to get existing quiz
-      const quizResponse = await fetch(`/api/quizzes/${courseId}`)
+      // First, try to get existing assessment
+      const assessmentResponse = await fetch(`/api/assessments/${courseId}${userParam ? `?${userParam}` : ''}`, {
+        headers: {
+          ...(session?.user?.email ? { 'X-User-Email': session.user.email } : {}),
+        }
+      })
       
-      if (quizResponse.ok) {
-        // Quiz exists, navigate to quiz page
+      if (assessmentResponse.ok) {
+        // Assessment exists, navigate to assessment page
         router.push(`/assessments/${courseId}`)
         return
       }
 
-      // Quiz doesn't exist, generate it
-      const generateResponse = await fetch(`/api/quizzes/${courseId}`, {
+      // Assessment doesn't exist, generate it
+      const generateResponse = await fetch(`/api/assessments/${courseId}${userParam ? `?${userParam}` : ''}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(session?.user?.email ? { 'X-User-Email': session.user.email } : {}),
         },
+        body: JSON.stringify({
+          user_id: session?.user?.id,
+          email: session?.user?.email,
+        }),
       })
 
       if (!generateResponse.ok) {
         const errorData = await generateResponse.json()
-        throw new Error(errorData.error || 'Failed to generate quiz')
+        throw new Error(errorData.error || 'Failed to generate assessment')
       }
 
-      toast.success('Quiz generated successfully!')
+      toast.success('Assessment generated successfully!')
       
-      // Navigate to the quiz
+      // Navigate to the assessment
       router.push(`/assessments/${courseId}`)
       
     } catch (error) {
       console.error('Error handling assessment:', error)
       toast.error(error instanceof Error ? error.message : 'Failed to start assessment')
     } finally {
-      setGeneratingQuiz(null)
+      setGeneratingAssessment(null)
     }
   }
 
   const getCompletedChapters = (course: Course) => {
-    const totalChapters = course.units.reduce((total, unit) => total + unit.chapters.length, 0)
-    const completedChapters = course.units.reduce(
-      (total, unit) => total + unit.chapters.filter(chapter => chapter.isCompleted).length,
+    const totalChapters = course.units?.reduce((total, unit) => total + (unit.chapters?.length || 0), 0) || 0
+    const completedChapters = course.units?.reduce(
+      (total, unit) => total + (unit.chapters?.filter(chapter => chapter.isCompleted)?.length || 0),
       0
-    )
+    ) || 0
     return { completed: completedChapters, total: totalChapters }
   }
 
@@ -161,11 +151,9 @@ export default function AssessmentsPage() {
             </h1>
             <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
               Test your knowledge and understanding of the courses you've completed. 
-              Take assessments to validate your learning progress.
+              Take final course assessments to validate your learning progress.
             </p>
           </div>
-
-
 
           {/* Courses Grid */}
           {courses.length === 0 ? (
@@ -188,10 +176,10 @@ export default function AssessmentsPage() {
               {courses.map((course) => {
                 const { completed, total } = getCompletedChapters(course)
                 const progressPercentage = getProgressPercentage(course)
-                const hasQuiz = !!course.quiz
-                const isGenerating = generatingQuiz === course.course_id
-                const quizAttempt = getQuizAttempt(course)
-                const quizCompleted = hasQuizAttempt(course)
+                const hasAssessment = !!course.assessment || !!course.quiz
+                const isGenerating = generatingAssessment === course.course_id
+                const assessmentAttempt = getAssessmentAttempt(course)
+                const assessmentCompleted = hasAssessmentAttempt(course)
 
                 return (
                   <Card key={course.course_id} className="hover:shadow-lg transition-shadow">
@@ -203,7 +191,7 @@ export default function AssessmentsPage() {
                         {course.title}
                       </CardTitle>
                       <CardDescription>
-                        {course.units.length} units • {total} chapters
+                        {course.units?.length || 0} units • {total} chapters
                       </CardDescription>
                     </CardHeader>
 
@@ -231,20 +219,20 @@ export default function AssessmentsPage() {
 
                       {/* Status Badge */}
                       <div className="flex justify-between items-center">
-                        {quizCompleted && quizAttempt ? (
+                        {assessmentCompleted && assessmentAttempt ? (
                           <div className="flex items-center space-x-2">
                             <Badge className="bg-blue-100 text-blue-800 border-blue-200">
-                              Quiz Completed
+                              Assessment Completed
                             </Badge>
                             <Badge className={`${
-                              quizAttempt.score >= 80 ? 'bg-green-100 text-green-800 border-green-200' :
-                              quizAttempt.score >= 60 ? 'bg-yellow-100 text-yellow-800 border-yellow-200' :
+                              assessmentAttempt.score >= 80 ? 'bg-green-100 text-green-800 border-green-200' :
+                              assessmentAttempt.score >= 60 ? 'bg-yellow-100 text-yellow-800 border-yellow-200' :
                               'bg-red-100 text-red-800 border-red-200'
                             }`}>
-                              {quizAttempt.score}%
+                              {assessmentAttempt.score}%
                             </Badge>
                           </div>
-                        ) : hasQuiz ? (
+                        ) : hasAssessment ? (
                           <Badge className="bg-green-100 text-green-800 border-green-200">
                             Assessment Available
                           </Badge>
@@ -265,11 +253,11 @@ export default function AssessmentsPage() {
                         {isGenerating ? (
                           <div className="flex items-center space-x-2">
                             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                            <span>Generating Quiz...</span>
+                            <span>Generating Assessment...</span>
                           </div>
-                        ) : quizCompleted ? (
-                          'Review Quiz'
-                        ) : hasQuiz ? (
+                        ) : assessmentCompleted ? (
+                          'Review Assessment'
+                        ) : hasAssessment ? (
                           'Take Assessment'
                         ) : (
                           'Generate Assessment'
