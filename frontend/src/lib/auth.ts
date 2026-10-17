@@ -1,7 +1,5 @@
-"use client"
 import { NextAuthOptions, User, getServerSession } from "next-auth";
-import { useSession } from "next-auth/react";
-import { redirect, useRouter } from "next/navigation";
+import { redirect } from "next/navigation";
 
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
@@ -131,14 +129,6 @@ export async function loginIsRequiredServer() {
   if (!session) return redirect("/login");
 }
 
-export function loginIsRequiredClient() {
-  if (typeof window !== "undefined") {
-    const session = useSession();
-    const router = useRouter();
-    if (!session) router.push("/login");
-  }
-}
-
 export type SessionUser = {
   name?: string | null;
   email?: string | null;
@@ -147,6 +137,6 @@ export type SessionUser = {
 }
 
 export const getUserSession = async (): Promise<SessionUser | null> => {
-  const authUserSession = await getServerSession();
+  const authUserSession = await getServerSession(authConfig);
   return authUserSession?.user || null;
-}
+};
