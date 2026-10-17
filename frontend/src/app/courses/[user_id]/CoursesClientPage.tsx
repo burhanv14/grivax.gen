@@ -51,7 +51,8 @@ export default function CoursesClientPage({ params }: { params: { user_id: strin
   );
 
   const filteredEnrolledCourses = enrolledCourses.filter((course) =>
-    course.title.toLowerCase().includes(searchQuery.toLowerCase())
+    course.title.toLowerCase().includes(searchQuery.toLowerCase()) &&
+    course.isPublished
   );
 
   // For students, filter out enrolled courses from available public courses
