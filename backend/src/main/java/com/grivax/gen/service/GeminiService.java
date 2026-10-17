@@ -1,4 +1,4 @@
-package com.gravax.gen.service;
+package com.grivax.gen.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -363,3 +363,4 @@ public class GeminiService {
         return (response != null && !response.isBlank()) ? response : "I apologize, but I could not generate a response.";
     }
 }
+
