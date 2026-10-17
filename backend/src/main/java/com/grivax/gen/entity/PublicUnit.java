@@ -1,4 +1,4 @@
-package com.gravax.gen.entity;
+package com.grivax.gen.entity;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
@@ -69,3 +69,4 @@ public class PublicUnit {
         }
     }
 }
+
