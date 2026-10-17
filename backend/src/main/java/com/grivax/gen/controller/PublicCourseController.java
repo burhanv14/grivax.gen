@@ -1,15 +1,15 @@
-package com.gravax.gen.controller;
+package com.grivax.gen.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.gravax.gen.entity.PublicChapter;
-import com.gravax.gen.entity.PublicCourse;
-import com.gravax.gen.entity.PublicCourseEnrollment;
-import com.gravax.gen.entity.PublicUnit;
-import com.gravax.gen.repository.PublicChapterRepository;
-import com.gravax.gen.repository.PublicCourseEnrollmentRepository;
-import com.gravax.gen.repository.PublicCourseRepository;
-import com.gravax.gen.repository.PublicUnitRepository;
+import com.grivax.gen.entity.PublicChapter;
+import com.grivax.gen.entity.PublicCourse;
+import com.grivax.gen.entity.PublicCourseEnrollment;
+import com.grivax.gen.entity.PublicUnit;
+import com.grivax.gen.repository.PublicChapterRepository;
+import com.grivax.gen.repository.PublicCourseEnrollmentRepository;
+import com.grivax.gen.repository.PublicCourseRepository;
+import com.grivax.gen.repository.PublicUnitRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -266,3 +266,4 @@ public class PublicCourseController {
         return ResponseEntity.ok(chapter);
     }
 }
+

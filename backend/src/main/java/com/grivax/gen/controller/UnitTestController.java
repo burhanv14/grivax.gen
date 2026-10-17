@@ -1,16 +1,16 @@
-package com.gravax.gen.controller;
+package com.grivax.gen.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.gravax.gen.entity.Chapter;
-import com.gravax.gen.entity.Test;
-import com.gravax.gen.entity.TestAttempt;
-import com.gravax.gen.entity.Unit;
-import com.gravax.gen.repository.ChapterRepository;
-import com.gravax.gen.repository.TestAttemptRepository;
-import com.gravax.gen.repository.TestRepository;
-import com.gravax.gen.repository.UnitRepository;
-import com.gravax.gen.service.GeminiService;
+import com.grivax.gen.entity.Chapter;
+import com.grivax.gen.entity.Test;
+import com.grivax.gen.entity.TestAttempt;
+import com.grivax.gen.entity.Unit;
+import com.grivax.gen.repository.ChapterRepository;
+import com.grivax.gen.repository.TestAttemptRepository;
+import com.grivax.gen.repository.TestRepository;
+import com.grivax.gen.repository.UnitRepository;
+import com.grivax.gen.service.GeminiService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -225,3 +225,4 @@ public class UnitTestController {
         ));
     }
 }
+
