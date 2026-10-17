@@ -268,16 +268,6 @@ export default function LoginPage() {
                     </button>
                   </div>
                 </div>
-
-                <div className="flex items-center space-x-2">
-                  <Checkbox id="remember" disabled={isLoading} />
-                  <Label
-                    htmlFor="remember"
-                    className="text-xs sm:text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    Remember me for 30 days
-                  </Label>
-                </div>
               </div>
 
               <ReCaptchaElement setIsRecaptchaDone={setIsRecaptchaDone} />
