@@ -1,6 +1,7 @@
 package com.gravax.gen.entity;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.*;
@@ -54,6 +55,7 @@ public class Assessment {
     private Course course;
 
     @OneToMany(mappedBy = "assessment", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
     @Builder.Default
     private List<AssessmentAttempt> attempts = new ArrayList<>();
 

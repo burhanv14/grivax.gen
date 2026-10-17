@@ -59,7 +59,7 @@ public class GeminiService {
 
             String response = restClient.post()
                     .uri(uriBuilder -> uriBuilder
-                            .path("/models/gemini-2.5-flash:generateContent")
+                            .path("/models/gemini-3.8-flash:generateContent")
                             .queryParam("key", apiKey)
                             .build())
                     .contentType(MediaType.APPLICATION_JSON)

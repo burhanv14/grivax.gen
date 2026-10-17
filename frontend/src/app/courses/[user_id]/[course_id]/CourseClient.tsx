@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useEffect, useState } from "react"
-import { ArrowLeft, BookOpen, ChevronRight, Clock, GraduationCap, Menu, Star, CheckCircle2, Loader2 } from "lucide-react"
+import { ArrowLeft, BookOpen, ChevronRight, Clock, GraduationCap, Menu, Star, CheckCircle2, Loader2, GripVertical } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { YouTubePlayer } from "@/components/youtube-player"
@@ -17,6 +17,11 @@ import CourseSidebar from "@/components/course-sidebar"
 import { MarkdownContent } from "@/components/MarkdownContent"
 import UnitTest from "@/components/unit-test"
 import type { Course, Unit, Chapter } from "@/types"
+import { cn } from "@/lib/utils"
+
+const DEFAULT_SIDEBAR_WIDTH = 320
+const MIN_SIDEBAR_WIDTH = 240
+const MAX_SIDEBAR_WIDTH = 640
 
 // This would normally come from your database
 // For this example, we'll use the props passed from the server component
@@ -33,6 +38,8 @@ export default function CourseClient({
   const [activeChapterIndex, setActiveChapterIndex] = useState(0)
   const [expandedUnits, setExpandedUnits] = useState([0]) // First unit expanded by default
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+  const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR_WIDTH)
+  const [isResizing, setIsResizing] = useState(false)
   const [isMobileView, setIsMobileView] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [showConfetti, setShowConfetti] = useState(false)
@@ -46,7 +53,7 @@ export default function CourseClient({
   const activeChapter = activeUnit?.chapters?.[activeChapterIndex]
 
   // Calculate progress
-  const completedChapters = course.units.reduce((acc, unit) => 
+  const completedChapters = course.units.reduce((acc, unit) =>
     acc + unit.chapters.filter(ch => ch.isCompleted).length, 0
   )
   const progressPercentage = Math.round((completedChapters / totalChapters) * 100)
@@ -97,7 +104,7 @@ export default function CourseClient({
 
       // Update the course state to reflect the changes
       // This ensures the sidebar and other components show the updated completion status
-      const updatedCompletedChapters = updatedCourse.units.reduce((acc, unit) => 
+      const updatedCompletedChapters = updatedCourse.units.reduce((acc, unit) =>
         acc + unit.chapters.filter(ch => ch.isCompleted).length, 0
       )
       const updatedProgressPercentage = Math.round((updatedCompletedChapters / totalChapters) * 100)
@@ -108,11 +115,11 @@ export default function CourseClient({
       // Update the course object in the parent component
       // This is a workaround since we don't have direct access to the parent state
       // In a real app, you might want to use a state management solution like Redux or Context API
-      window.dispatchEvent(new CustomEvent('courseUpdated', { 
-          detail: {
-            course: updatedCourse,
+      window.dispatchEvent(new CustomEvent('courseUpdated', {
+        detail: {
+          course: updatedCourse,
           progressPercentage: updatedProgressPercentage
-        } 
+        }
       }))
     } catch (error) {
       console.error('Error marking chapter as complete:', error)
@@ -121,14 +128,50 @@ export default function CourseClient({
     }
   }
 
+  // Load saved sidebar width from localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("course_sidebar_width")
+      if (saved) {
+        const parsed = parseInt(saved, 10)
+        const maxAllowed = Math.min(MAX_SIDEBAR_WIDTH, Math.floor(window.innerWidth * 0.6))
+        if (!isNaN(parsed) && parsed >= MIN_SIDEBAR_WIDTH && parsed <= maxAllowed) {
+          setSidebarWidth(parsed)
+        }
+      }
+    } catch {
+      // Ignore localStorage errors
+    }
+  }, [])
+
+  // Handle cursor and text selection while dragging
+  useEffect(() => {
+    if (isResizing) {
+      document.body.style.userSelect = "none"
+      document.body.style.cursor = "col-resize"
+    } else {
+      document.body.style.userSelect = ""
+      document.body.style.cursor = ""
+    }
+    return () => {
+      document.body.style.userSelect = ""
+      document.body.style.cursor = ""
+    }
+  }, [isResizing])
+
   // Handle window resize for responsive design
   useEffect(() => {
     const handleResize = () => {
-      setIsMobileView(window.innerWidth < 1024)
-      if (window.innerWidth < 1024) {
+      const isMobile = window.innerWidth < 1024
+      setIsMobileView(isMobile)
+      if (isMobile) {
         setIsSidebarOpen(false)
       } else {
         setIsSidebarOpen(true)
+        setSidebarWidth((prev) => {
+          const maxAllowed = Math.min(MAX_SIDEBAR_WIDTH, Math.floor(window.innerWidth * 0.6))
+          return Math.min(prev, maxAllowed)
+        })
       }
     }
 
@@ -136,6 +179,86 @@ export default function CourseClient({
     window.addEventListener("resize", handleResize)
     return () => window.removeEventListener("resize", handleResize)
   }, [])
+
+  // Start dragging resize handle
+  const handleResizeStart = (e: React.PointerEvent) => {
+    if (e.button !== 0) return // Only primary click
+    e.preventDefault()
+    setIsResizing(true)
+
+    const startX = e.clientX
+    const startWidth = sidebarWidth
+
+    const handlePointerMove = (moveEvent: PointerEvent) => {
+      const delta = moveEvent.clientX - startX
+      const maxAllowed = Math.min(MAX_SIDEBAR_WIDTH, Math.floor(window.innerWidth * 0.6))
+      const newWidth = Math.min(Math.max(startWidth + delta, MIN_SIDEBAR_WIDTH), maxAllowed)
+      setSidebarWidth(newWidth)
+    }
+
+    const handlePointerUp = (upEvent: PointerEvent) => {
+      setIsResizing(false)
+      window.removeEventListener("pointermove", handlePointerMove)
+      window.removeEventListener("pointerup", handlePointerUp)
+      window.removeEventListener("pointercancel", handlePointerUp)
+
+      const delta = upEvent.clientX - startX
+      const maxAllowed = Math.min(MAX_SIDEBAR_WIDTH, Math.floor(window.innerWidth * 0.6))
+      const finalWidth = Math.min(Math.max(startWidth + delta, MIN_SIDEBAR_WIDTH), maxAllowed)
+      try {
+        localStorage.setItem("course_sidebar_width", String(finalWidth))
+      } catch {
+        // ignore
+      }
+    }
+
+    window.addEventListener("pointermove", handlePointerMove)
+    window.addEventListener("pointerup", handlePointerUp)
+    window.addEventListener("pointercancel", handlePointerUp)
+  }
+
+  // Reset sidebar width to default (320px) on double-click
+  const handleResetWidth = () => {
+    setSidebarWidth(DEFAULT_SIDEBAR_WIDTH)
+    try {
+      localStorage.setItem("course_sidebar_width", String(DEFAULT_SIDEBAR_WIDTH))
+    } catch {
+      // ignore
+    }
+  }
+
+  // Keyboard navigation for resizing
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    const step = e.shiftKey ? 48 : 16
+    const maxAllowed = Math.min(MAX_SIDEBAR_WIDTH, Math.floor(window.innerWidth * 0.6))
+
+    if (e.key === "ArrowLeft") {
+      e.preventDefault()
+      setSidebarWidth((w) => {
+        const next = Math.max(w - step, MIN_SIDEBAR_WIDTH)
+        try { localStorage.setItem("course_sidebar_width", String(next)) } catch { }
+        return next
+      })
+    } else if (e.key === "ArrowRight") {
+      e.preventDefault()
+      setSidebarWidth((w) => {
+        const next = Math.min(w + step, maxAllowed)
+        try { localStorage.setItem("course_sidebar_width", String(next)) } catch { }
+        return next
+      })
+    } else if (e.key === "Home") {
+      e.preventDefault()
+      setSidebarWidth(MIN_SIDEBAR_WIDTH)
+      try { localStorage.setItem("course_sidebar_width", String(MIN_SIDEBAR_WIDTH)) } catch { }
+    } else if (e.key === "End") {
+      e.preventDefault()
+      setSidebarWidth(maxAllowed)
+      try { localStorage.setItem("course_sidebar_width", String(maxAllowed)) } catch { }
+    } else if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault()
+      handleResetWidth()
+    }
+  }
 
   // Toggle unit expansion with improved animation flow
   const toggleUnit = (unitIndex: number) => {
@@ -165,26 +288,26 @@ export default function CourseClient({
   useEffect(() => {
     const fetchChapterStatus = async () => {
       if (!activeChapter) return;
-      
+
       try {
         const response = await fetch(
           `/api/courses/${userId}/${course.course_id}/${activeUnit.unit_id}/${activeChapter.chapter_id}/status`
         );
-        
+
         if (!response.ok) {
           console.error('Failed to fetch chapter status');
           return;
         }
-        
+
         const data = await response.json();
-        
+
         // Update the local state to reflect the actual completion status from the database
         if (data.success && data.isCompleted !== activeChapter.isCompleted) {
           const updatedCourse = { ...course };
           const updatedUnit = updatedCourse.units[activeUnitIndex];
           const updatedChapter = updatedUnit.chapters[activeChapterIndex];
           updatedChapter.isCompleted = data.isCompleted;
-          
+
           // Force a re-render with the updated data
           setActiveChapterIndex(activeChapterIndex);
         }
@@ -192,7 +315,7 @@ export default function CourseClient({
         console.error('Error fetching chapter status:', error);
       }
     };
-    
+
     fetchChapterStatus();
   }, [activeChapter, activeUnit, activeUnitIndex, activeChapterIndex, course, userId]);
 
@@ -286,7 +409,7 @@ export default function CourseClient({
               <GraduationCap className="h-5 w-5 text-primary" />
               <h1 className="text-lg font-semibold tracking-tight truncate max-w-[200px] sm:max-w-md">
                 {course?.title || "Loading..."}
-        </h1>
+              </h1>
             </motion.div>
 
             <div className="flex items-center gap-4">
@@ -309,7 +432,7 @@ export default function CourseClient({
                       </Button>
                     </motion.div>
                   </SheetTrigger>
-                  <SheetContent side="left" className="p-0 w-80">
+                  <SheetContent side="left" className="p-0 w-88">
                     {course ? (
                       <CourseSidebar
                         course={course}
@@ -340,40 +463,94 @@ export default function CourseClient({
         </div>
       </motion.header>
 
-      <div className="flex">
+      <div className="flex relative w-full overflow-hidden">
+        {/* Transparent global overlay during dragging to prevent iframes (YouTube) swallowing pointer events */}
+        {isResizing && (
+          <div
+            className="fixed inset-0 z-50 cursor-col-resize select-none pointer-events-auto bg-transparent"
+            aria-hidden="true"
+          />
+        )}
+
         {/* Sidebar */}
         <AnimatePresence initial={false}>
           {isSidebarOpen && !isMobileView && (
             <motion.aside
               initial={{ width: 0, opacity: 0 }}
-              animate={{ width: 320, opacity: 1 }}
+              animate={{ width: sidebarWidth, opacity: 1 }}
               exit={{ width: 0, opacity: 0 }}
-              transition={{ duration: 0.4, ease: [0.25, 1, 0.5, 1] }}
-              className="border-r h-[calc(100vh-64px)] overflow-hidden"
+              transition={
+                isResizing
+                  ? { duration: 0 }
+                  : { duration: 0.35, ease: [0.25, 1, 0.5, 1] }
+              }
+              className="relative border-r h-[calc(100vh-64px)] flex-shrink-0 flex flex-col group/sidebar"
             >
-              {course ? (
-                <CourseSidebar
-                  course={course}
-                  expandedUnits={expandedUnits}
-                  toggleUnit={toggleUnit}
-                  activeUnitIndex={activeUnitIndex}
-                  activeChapterIndex={activeChapterIndex}
-                  setActiveChapter={setActiveChapter}
-                  totalChapters={totalChapters}
-                  progressPercentage={progressPercentage}
-                  setActiveUnitTest={setActiveUnitTest}
-                  activeUnitTestId={activeUnitTest}
+              <div className="h-full w-full overflow-hidden flex flex-col">
+                {course ? (
+                  <CourseSidebar
+                    course={course}
+                    expandedUnits={expandedUnits}
+                    toggleUnit={toggleUnit}
+                    activeUnitIndex={activeUnitIndex}
+                    activeChapterIndex={activeChapterIndex}
+                    setActiveChapter={setActiveChapter}
+                    totalChapters={totalChapters}
+                    progressPercentage={progressPercentage}
+                    setActiveUnitTest={setActiveUnitTest}
+                    activeUnitTestId={activeUnitTest}
+                  />
+                ) : (
+                  <div className="p-4">Loading course content...</div>
+                )}
+              </div>
+
+              {/* Resize Handle */}
+              <div
+                role="separator"
+                tabIndex={0}
+                aria-orientation="vertical"
+                aria-label="Resize course sidebar"
+                aria-valuenow={sidebarWidth}
+                aria-valuemin={MIN_SIDEBAR_WIDTH}
+                aria-valuemax={MAX_SIDEBAR_WIDTH}
+                onPointerDown={handleResizeStart}
+                onDoubleClick={handleResetWidth}
+                onKeyDown={handleKeyDown}
+                title="Drag to resize."
+                className={cn(
+                  "absolute top-0 -right-2 w-4 h-full cursor-col-resize z-20 flex items-center justify-center select-none outline-none focus-visible:ring-2 focus-visible:ring-primary/50 group/handle",
+                  isResizing && "cursor-col-resize"
+                )}
+              >
+                {/* Visual bar line */}
+                <div
+                  className={cn(
+                    "w-[2px] h-full transition-colors duration-150",
+                    isResizing
+                      ? "bg-primary"
+                      : "bg-transparent group-hover/handle:bg-primary/50 group-focus-visible/handle:bg-primary"
+                  )}
                 />
-              ) : (
-                <div className="p-4">Loading course content...</div>
-              )}
+                {/* Grip pill indicator */}
+                <div
+                  className={cn(
+                    "absolute top-1/2 -translate-y-1/2 w-4 h-8 rounded-full border border-border bg-background shadow-xs flex items-center justify-center transition-all duration-150 pointer-events-none",
+                    isResizing
+                      ? "opacity-100 scale-105 border-primary shadow-sm"
+                      : "opacity-0 group-hover/handle:opacity-100 group-focus-visible/handle:opacity-100"
+                  )}
+                >
+                  <GripVertical className="h-3 w-3 text-muted-foreground" />
+                </div>
+              </div>
             </motion.aside>
           )}
         </AnimatePresence>
 
         {/* Main Content */}
         <motion.main
-          className="flex-1 h-[calc(100vh-64px)] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+          className="flex-1 min-w-0 h-[calc(100vh-64px)] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.3 }}
@@ -455,7 +632,7 @@ export default function CourseClient({
                     transition={{ duration: 0.5 }}
                   >
                     <div className="flex items-center gap-2 flex-wrap">
-        <motion.div
+                      <motion.div
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         transition={{ type: "spring", stiffness: 400, damping: 17 }}
@@ -520,18 +697,17 @@ export default function CourseClient({
                             Part of {activeUnit?.name}
                           </p>
                         </div>
-                        <motion.div 
-                          whileHover={{ scale: 1.02 }} 
+                        <motion.div
+                          whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.98 }}
                           className="w-full sm:w-auto mt-4 sm:mt-0"
                         >
                           <Button
                             variant={activeChapter.isCompleted ? "secondary" : "default"}
-                            className={`relative overflow-hidden shadow-lg w-full sm:w-auto ${
-                              activeChapter.isCompleted
-                                ? "bg-green-500/90 text-white hover:bg-green-600/90"
-                                : "bg-gradient-to-r from-primary to-primary/80 text-white hover:from-primary/90 hover:to-primary/70"
-                            } rounded-xl px-4 sm:px-6 py-3 sm:py-5 font-medium text-base transition-all duration-300`}
+                            className={`relative overflow-hidden shadow-lg w-full sm:w-auto ${activeChapter.isCompleted
+                              ? "bg-green-500/90 text-white hover:bg-green-600/90"
+                              : "bg-gradient-to-r from-primary to-primary/80 text-white hover:from-primary/90 hover:to-primary/70"
+                              } rounded-xl px-4 sm:px-6 py-3 sm:py-5 font-medium text-base transition-all duration-300`}
                             onClick={handleChapterComplete}
                             disabled={isLoading || activeChapter.isCompleted}
                           >
@@ -704,7 +880,7 @@ export default function CourseClient({
                   <p className="text-muted-foreground mt-2">Please select a chapter to begin learning</p>
                 </div>
               )}
-          </motion.div>
+            </motion.div>
           </AnimatePresence>
         </motion.main>
       </div>

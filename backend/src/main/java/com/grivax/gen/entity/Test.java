@@ -1,6 +1,7 @@
 package com.gravax.gen.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.*;
@@ -54,6 +55,7 @@ public class Test {
     private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "test", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
     @Builder.Default
     private List<TestAttempt> attempts = new ArrayList<>();
 
