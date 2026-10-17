@@ -1,9 +1,9 @@
-package com.gravax.gen.service;
+package com.grivax.gen.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.gravax.gen.entity.*;
-import com.gravax.gen.repository.*;
+import com.grivax.gen.entity.*;
+import com.grivax.gen.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -119,3 +119,4 @@ public class CourseGenerationService {
         return CompletableFuture.completedFuture(null);
     }
 }
+

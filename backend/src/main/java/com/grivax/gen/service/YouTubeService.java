@@ -1,4 +1,4 @@
-package com.gravax.gen.service;
+package com.grivax.gen.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -62,3 +62,4 @@ public class YouTubeService {
         return DEFAULT_VIDEO;
     }
 }
+
