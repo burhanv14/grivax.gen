@@ -1,204 +1,87 @@
-# Grivax - Dynamic Education Platform
+# Grivax.gen
 
-## 🚀 Project Overview
-**Grivax** is a next-generation education platform designed to generate **automated and dynamic courses and quizzes**. The platform provides a one-stop solution for exam preparation, offering a seamless learning experience with modern UI/UX, multi-language support, and intelligent content generation.
+AI-powered learning platform. Personalized courses, AI-generated assessments, and doubt-solving — built with a Next.js frontend and a Spring Boot backend.
 
-### 🔹 Key Features
-- **Dynamic Content Generation:** AI-driven course and quiz generation.
-- **Multi-Language Support:** Supports **English and Hindi**.
-- **Dark & Light Mode:** User-friendly theme toggle.
-- **Smooth Transitions:** Elegant animations enhance user experience.
-- **Fully Responsive:** Optimized for **desktop, tablet, and mobile**.
-- **Modern UI:** Inspired by [learnweb3.io](https://learnweb3.io/) with a sleek and stylish design.
-- **Scalable Architecture:** Built for easy integration with future backend APIs.
+## Tech Stack
 
----
+**Frontend** (`/frontend`) — Next.js 14 · React 18 · TypeScript · Tailwind CSS · shadcn/ui · NextAuth · reactflow
 
-## 🔧 How It Works
-1. **Course & Quiz Generation:** The platform dynamically generates course content and quizzes based on user input.
-2. **User Interaction:** Users can explore generated courses, take quizzes, and track progress.
-3. **Adaptive UI:** The website supports theme switching and localization (English/Hindi).
-4. **Smooth Navigation:** The app uses client-side routing and transitions for a seamless experience.
+**Backend** (`/backend`) — Spring Boot 4.1.1 · Java 25 · Spring Data JPA · Spring Security · Spring Data REST · PostgreSQL
 
----
+**Integrations** — Gemini AI · YouTube/Google Search API · reCAPTCHA v3
 
-## 🛠️ Tech Stack
-### Frontend:
-- **Next.js 14 (App Router)** - Modern React frontend with SSR, SSG, and NextAuth.
-- **Tailwind CSS** - Modern UI styling and dark/light modes.
-- **Framer Motion** - Smooth transitions and animations.
+## Features
 
-### Backend (Java & PostgreSQL):
-- **Java 25 & Spring Boot 4** - REST API backend microservice architecture.
-- **Spring Data JPA & Hibernate** - Object-Relational Mapping with native JSONB support.
-- **PostgreSQL** - Relational and JSON document storage.
-- **Spring Security Crypto** - BCrypt password hashing.
-- **Google Gemini REST API** - AI-powered syllabus, chapter, quiz, and test generation.
-- **Google Custom Search & YouTube Data API** - Automatic media curation.
+- AI-tailored learning paths and course content
+- Auto-generated quizzes and assessments
+- AI-powered doubt solving
+- Video lessons with YouTube integration
+- User authentication & course enrollment
+- Progress tracking and certificates
 
----
+## Project Structure
 
-## 📜 Vision & Future Enhancements
-Grivax aims to revolutionize online learning by automating course and quiz creation. Future versions will include:
-- **AI-driven personalized recommendations**
-- **Gamification with rewards and leaderboards**
-- **Voice-assisted learning**
-- **Integration with educational APIs**
-- **Collaboration features for group studies**
-
----
-
-## 🔄 Software Development Life Cycle (SDLC)
-The project follows the **Agile SDLC model** to ensure continuous improvements and adaptability.
-
-### 🔹 Phase 1: Planning & Requirement Analysis
-- Define core features and functionality.
-- Research user needs and design UI wireframes.
-
-### 🔹 Phase 2: System Design
-- Architect frontend using Next.js App Router.
-- Define API contracts for backend integration.
-
-### 🔹 Phase 3: Development
-- Implement frontend with dynamic routing.
-- Develop UI components (NavBar, Course Cards, Quiz UI, etc.).
-- Integrate multi-language support and theme switching.
-
-### 🔹 Phase 4: Testing
-- Conduct unit tests for components.
-- Perform UI/UX testing across devices.
-- Ensure smooth transitions and accessibility.
-
-### 🔹 Phase 5: Deployment & Maintenance
-- Deploy on **Vercel** for frontend hosting.
-- Plan for future backend integration.
-- Monitor user feedback and iterate based on Agile sprints.
-
----
-
-## 📑 Technical Documentation
-### 🏗️ Folder Structure
 ```
-/src
-  ├── app (Next.js App Router)
-  ├── components (Reusable UI components)
-  ├── hooks (Custom React hooks)
-  ├── styles (Tailwind CSS global styles)
-  ├── utils (Helper functions)
-  ├── i18n (Localization files)
-  ├── public (Static assets)
-  ├── pages (Fallback for App Router)
+grivax.gen/
+├── frontend/          # Next.js web app
+├── backend/           # Spring Boot REST API
+└── docs/              # Architecture diagrams & wireframes
 ```
 
-### 📜 API Endpoints (Planned)
-| Method | Endpoint | Description |
-|--------|---------|-------------|
-| GET | /api/courses | Fetch all dynamically generated courses |
-| GET | /api/quizzes | Retrieve quizzes for a course |
-| POST | /api/quiz/submit | Submit user answers and get scores |
+## Quick Start
 
----
+### Prerequisites
 
-## 🚀 Getting Started
-### Prerequisites:
-- **Node.js v18+**
-- **npm / yarn / pnpm**
+- Node.js 20+
+- Java 25 + Maven
+- PostgreSQL database
 
-### Installation:
+### Backend
+
 ```bash
-git clone https://github.com/your-username/grivax-gen.git
-cd grivax-gen
+cd backend
+./mvnw spring-boot:run
+```
+
+The API runs on `http://localhost:8080` (configurable via `SERVER_PORT`).
+
+### Frontend
+
+```bash
+cd frontend
 npm install
 npm run dev
 ```
-The application will be available at `http://localhost:3000`
 
----
+The app runs on `http://localhost:3000` and proxies `/api` requests to the backend.
 
-## 📌 Contribution Guidelines
-We welcome contributions! Please follow these steps:
-1. Fork the repository.
-2. Create a feature branch (`git checkout -b feature-name`).
-3. Commit changes (`git commit -m 'Add new feature'`).
-4. Push to branch (`git push origin feature-name`).
-5. Open a Pull Request.
+### Environment Variables
 
----
+Create `.env` files in both `frontend/` and `backend/` as needed:
 
-## 📜 License
-This project is licensed under the **MIT License**.
-
----
-
-## 📞 Contact
-For inquiries, open an issue or reach out via email at **22ucc123@lnmiit.ac.in**.
-
----
-
-## ⚙️ Course Generation Progress Tracking
-
-Real-time (near) progress for course material generation is exposed through an enhanced status endpoint and a lightweight polling UI component.
-
-### Backend Flow
-1. User accepts a generated outline (`/api/generate-course/[user_id]/[course_id]` POST).
-2. Server triggers detailed content + unit & chapter creation **asynchronously** (background task) and returns immediately.
-3. While units/chapters are persisted, the client polls:
-   `/api/generate-course/[user_id]/[course_id]/status`.
-4. The status route derives progress directly from the database—no extra tables required.
-
-### Status Response Shape
-```
-{
-  status: 'generating' | 'completed',
-  course_id,
-  user_id,
-  progress: {
-    percent: number,
-    unitsCreated: number,
-    completedUnits: number,        // units with >=1 chapter
-    totalIntendedUnits: number,    // from original outline (modules length)
-    totalChapters: number,
-    chaptersPerUnit: [{ unit_id, chapters }]
-  }
-}
+**Backend** (`application.properties`):
+```properties
+SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/grivax
+SPRING_DATASOURCE_USERNAME=postgres
+SPRING_DATASOURCE_PASSWORD=your-password
+GEMINI_API_KEY=your-gemini-key
+YOUTUBE_API_KEY=your-youtube-key
+GOOGLE_CX=your-google-cx
+RECAPTCHA_SECRET_KEY=your-recaptcha-secret
+CORS_ALLOWED_ORIGINS=http://localhost:3000
 ```
 
-### Frontend Component
-`CourseGenerationProgress` (in `src/components/course-generation-progress.tsx`) handles polling every 2.5s, displays:
-- Overall percent bar
-- Per-unit badges (✓ when at least one chapter created)
-- Auto-calls `onComplete()` when status reaches `completed`.
-
-### Design Decisions
-- Chose polling over SSE to minimize infra changes and keep deploy targets (e.g. serverless) simple.
-- Progress inference avoids schema migration; can evolve later (e.g. add `generation_state` table if granular events needed).
-- Background generation isolates latency from user interaction and enables future cancellation patterns.
-
-### Extensibility Ideas
-- Swap polling for Server-Sent Events (SSE) if longer generation tasks appear.
-- Persist fine-grained events (chapter_started, unit_completed) for audit / analytics.
-- Add cancellation endpoint to abort long external API calls.
-
-
-## Environmental Variables required
-env files:
-NEXT_PUBLIC_RECAPTCHA_SITE_KEY = 
-
-RECAPTCHA_SECRET_KEY = 
-
-DATABASE_URL="prisma+postgres://accelerate.prisma-data.net/?api_key=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcGlfa2V5IjoiMDA0YTg4MjAtODM3Mi00NjI4LTk5ZjEtOWVlZWY0OTU5NzA2IiwidGVuYW50X2lkIjoiZGI3YjZhZmEzN2VhOGVmNmUxYTUxMTU2MTcyNmFkZmM0YmJjM2NkNjk3ZmViNmRhYmU0MzBkMjgxZjczOTRkMCIsImludGVybmFsX3NlY3JldCI6ImMzZDJiMTUwLTQ0NTAtNGEyOS1hYWJkLTUzYjg3MWQ0MTMwMCJ9.LpoW1txUIFnycFtKXuwFhPOOLoZW0TEGPoXaZ81nssY"
-
-#Providers
-GOOGLE_CLIENT_ID=
-GOOGLE_CLIENT_SECRET=
-GITHUB_CLIENT_ID=
-GITHUB_CLIENT_SECRET=
-
-#Auth Config
-NEXTAUTH_SECRET=
+**Frontend**:
+```env
+BACKEND_URL=http://localhost:8080
+NEXTAUTH_SECRET=your-secret
 NEXTAUTH_URL=http://localhost:3000
+```
 
-#API Keys
-ANTHROPIC_API_KEY=
-UNSPLASH_ACCESS_KEY=
-GEMINI_API_KEY=
+## Docs
+
+Architecture diagrams, sequence diagrams, and wireframes are in [`/docs`](docs).
+
+## License
+
+MIT
