@@ -1,6 +1,6 @@
-package com.gravax.gen.repository;
+package com.grivax.gen.repository;
 
-import com.gravax.gen.entity.PublicChapter;
+import com.grivax.gen.entity.PublicChapter;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -12,3 +12,4 @@ public interface PublicChapterRepository extends JpaRepository<PublicChapter, St
     List<PublicChapter> findByPublicUnitIdOrderByOrderAsc(String publicUnitId);
     Optional<PublicChapter> findFirstByPublicUnitIdOrderByOrderDesc(String publicUnitId);
 }
+

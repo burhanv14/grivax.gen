@@ -1,6 +1,6 @@
-package com.gravax.gen.repository;
+package com.grivax.gen.repository;
 
-import com.gravax.gen.entity.PublicCourseEnrollment;
+import com.grivax.gen.entity.PublicCourseEnrollment;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -13,3 +13,4 @@ public interface PublicCourseEnrollmentRepository extends JpaRepository<PublicCo
     List<PublicCourseEnrollment> findByPublicCourseIdOrderByEnrolledAtDesc(String publicCourseId);
     List<PublicCourseEnrollment> findByStudentIdOrderByEnrolledAtDesc(String studentId);
 }
+
