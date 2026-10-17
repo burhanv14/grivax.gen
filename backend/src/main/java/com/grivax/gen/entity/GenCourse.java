@@ -1,4 +1,4 @@
-package com.gravax.gen.entity;
+package com.grivax.gen.entity;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
@@ -59,3 +59,4 @@ public class GenCourse {
         }
     }
 }
+
