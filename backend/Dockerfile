@@ -30,7 +30,9 @@ RUN groupadd -r spring && useradd -r -g spring spring
 USER spring
 
 # Copy the fat jar built in the previous stage.
-ARG JAR_FILE=target/*.jar
+# Use an absolute path: COPY --from=build resolves the source root-relative,
+# not relative to the build stage's WORKDIR.
+ARG JAR_FILE=/app/target/*.jar
 COPY --from=build --chown=spring:spring ${JAR_FILE} app.jar
 
 EXPOSE 8080
