@@ -3,22 +3,21 @@
 # =====================================================================
 # Build stage
 # =====================================================================
-FROM eclipse-temurin:25-jdk AS build
+# Use the official Maven image (Maven + Temurin JDK 25 pre-installed) so
+# the build never downloads the Maven distribution at build time. This
+# avoids HTTP 429 rate-limit errors from repo.maven.apache.org on shared
+# CI/build IPs (e.g. Render).
+FROM maven:3.9.15-eclipse-temurin-25 AS build
 WORKDIR /app
 
-# Maven wrapper (mvnw uses LF line endings, safe in Linux containers).
-COPY mvnw .
-COPY .mvn .mvn/
-RUN chmod +x mvnw
-
-# Copy only the POM first so dependency resolution is cached as its own layer.
-# Rebuilding after source changes won't re-download Maven or dependencies.
+# Cache dependency resolution as its own layer.
+# Rebuilding after source changes won't re-download dependencies.
 COPY pom.xml .
-RUN ./mvnw -B dependency:go-offline -DskipTests
+RUN mvn -B dependency:go-offline -DskipTests
 
 # Copy the application source and package the executable jar (skip tests).
 COPY src ./src
-RUN ./mvnw -B package -DskipTests
+RUN mvn -B package -DskipTests
 
 # =====================================================================
 # Run stage
