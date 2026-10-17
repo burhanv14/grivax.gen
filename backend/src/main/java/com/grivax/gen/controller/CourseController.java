@@ -1,13 +1,13 @@
-package com.gravax.gen.controller;
+package com.grivax.gen.controller;
 
-import com.gravax.gen.entity.Chapter;
-import com.gravax.gen.entity.Course;
-import com.gravax.gen.entity.Unit;
-import com.gravax.gen.entity.User;
-import com.gravax.gen.repository.ChapterRepository;
-import com.gravax.gen.repository.CourseRepository;
-import com.gravax.gen.repository.UnitRepository;
-import com.gravax.gen.repository.UserRepository;
+import com.grivax.gen.entity.Chapter;
+import com.grivax.gen.entity.Course;
+import com.grivax.gen.entity.Unit;
+import com.grivax.gen.entity.User;
+import com.grivax.gen.repository.ChapterRepository;
+import com.grivax.gen.repository.CourseRepository;
+import com.grivax.gen.repository.UnitRepository;
+import com.grivax.gen.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -175,3 +175,4 @@ public class CourseController {
         ));
     }
 }
+
