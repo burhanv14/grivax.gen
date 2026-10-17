@@ -1,4 +1,4 @@
-package com.gravax.gen;
+package com.grivax.gen;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -13,3 +13,4 @@ class GenApplicationTests {
 	}
 
 }
+
