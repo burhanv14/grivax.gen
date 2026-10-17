@@ -17,7 +17,7 @@ export default async function DashboardPage({
   params: { user_id: string }
 }) {
   const session = await getServerSession(authConfig)
-  
+
   if (!session?.user?.email) {
     redirect("/login?callbackUrl=" + encodeURIComponent(`/dashboard/${params.user_id}`))
   }
@@ -41,7 +41,7 @@ export default async function DashboardPage({
   const enrolledCourses = displayCourses.map((course: any) => {
     const units = course.units || []
     const totalChapters = units.reduce((acc: number, unit: any) => acc + (unit.chapters ? unit.chapters.length : 0), 0)
-    const completedChapters = units.reduce((acc: number, unit: any) => 
+    const completedChapters = units.reduce((acc: number, unit: any) =>
       acc + (unit.chapters ? unit.chapters.filter((ch: any) => ch.isCompleted).length : 0), 0
     )
     const progress = totalChapters > 0 ? Math.round((completedChapters / totalChapters) * 100) : 0

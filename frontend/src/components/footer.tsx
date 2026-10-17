@@ -116,11 +116,8 @@ export default function Footer() {
               master any subject.
             </p>
             <div className="flex space-x-5">
-              <SocialIcon icon={<Twitter className="h-5 w-5" />} label="Twitter" />
-              <SocialIcon icon={<Facebook className="h-5 w-5" />} label="Facebook" />
-              <SocialIcon icon={<Instagram className="h-5 w-5" />} label="Instagram" />
-              <SocialIcon icon={<Github className="h-5 w-5" />} label="GitHub" />
-              <SocialIcon icon={<Linkedin className="h-5 w-5" />} label="LinkedIn" />
+              <SocialIcon icon={<Github className="h-5 w-5" />} label="GitHub" link="https://github.com/burhanv14/grivax.gen" />
+              <SocialIcon icon={<Linkedin className="h-5 w-5" />} label="LinkedIn" link="https://www.linkedin.com/in/burhan-vora-b84817251/" />
             </div>
           </div>
 
@@ -128,22 +125,15 @@ export default function Footer() {
             <FooterLink href="/courses" label="Courses" />
             <FooterLink href="/assessments" label="Assessments" />
             <FooterLink href="/dashboard" label="Dashboard" />
-            <FooterLink href="#" label="Pricing" />
           </FooterColumn>
 
           <FooterColumn title="Company">
             <FooterLink href="#" label="About" />
-            <FooterLink href="#" label="Careers" />
-            <FooterLink href="#" label="Blog" />
+            <FooterLink href="#" label="Cookies" />
             <FooterLink href="#" label="Contact" />
+            <FooterLink href="#" label="Privacy" />
           </FooterColumn>
 
-          <FooterColumn title="Legal">
-            <FooterLink href="#" label="Terms" />
-            <FooterLink href="#" label="Privacy" />
-            <FooterLink href="#" label="Cookies" />
-            <FooterLink href="#" label="Licenses" />
-          </FooterColumn>
         </div>
 
         {/* Divider */}
@@ -159,10 +149,10 @@ export default function Footer() {
   )
 }
 
-function SocialIcon({ icon, label }: { icon: React.ReactNode; label: string }) {
+function SocialIcon({ icon, label, link }: { icon: React.ReactNode; label: string, link: string }) {
   return (
     <Link
-      href="#"
+      href={link}
       className="social-icon text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white transition-colors"
     >
       {icon}
