@@ -1,6 +1,6 @@
-package com.gravax.gen.repository;
+package com.grivax.gen.repository;
 
-import com.gravax.gen.entity.User;
+import com.grivax.gen.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -16,3 +16,4 @@ public interface UserRepository extends JpaRepository<User, String> {
             String role1, String name, String role2, String email
     );
 }
+

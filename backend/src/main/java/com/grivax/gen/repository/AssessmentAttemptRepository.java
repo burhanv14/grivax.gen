@@ -1,6 +1,6 @@
-package com.gravax.gen.repository;
+package com.grivax.gen.repository;
 
-import com.gravax.gen.entity.AssessmentAttempt;
+import com.grivax.gen.entity.AssessmentAttempt;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -12,3 +12,4 @@ public interface AssessmentAttemptRepository extends JpaRepository<AssessmentAtt
     Optional<AssessmentAttempt> findByAssessmentIdAndUserId(String assessmentId, String userId);
     List<AssessmentAttempt> findByAssessmentId(String assessmentId);
 }
+
