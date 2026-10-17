@@ -1,10 +1,10 @@
-package com.gravax.gen.controller;
+package com.grivax.gen.controller;
 
-import com.gravax.gen.entity.PublicCourse;
-import com.gravax.gen.entity.PublicCourseEnrollment;
-import com.gravax.gen.entity.User;
-import com.gravax.gen.repository.PublicCourseEnrollmentRepository;
-import com.gravax.gen.repository.UserRepository;
+import com.grivax.gen.entity.PublicCourse;
+import com.grivax.gen.entity.PublicCourseEnrollment;
+import com.grivax.gen.entity.User;
+import com.grivax.gen.repository.PublicCourseEnrollmentRepository;
+import com.grivax.gen.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -51,24 +51,29 @@ public class StudentController {
         List<Map<String, Object>> result = new ArrayList<>();
         for (PublicCourseEnrollment e : enrollments) {
             PublicCourse pc = e.getPublicCourse();
-            if (pc != null) {
-                Map<String, Object> courseData = new HashMap<>();
-                courseData.put("public_course_id", pc.getPublicCourseId());
-                courseData.put("title", pc.getTitle());
-                courseData.put("description", pc.getDescription());
-                courseData.put("image", pc.getImage());
-                courseData.put("teacher", pc.getTeacher());
-                courseData.put("units", pc.getUnits());
-                courseData.put("_count", pc.getCount());
-                courseData.put("enrollment", Map.of(
-                        "enrollment_id", e.getEnrollmentId(),
-                        "enrolledAt", e.getEnrolledAt(),
-                        "progress", e.getProgress()
-                ));
-                result.add(courseData);
+            // Hide draft (unpublished) public courses from enrolled students
+            if (pc == null || !Boolean.TRUE.equals(pc.getIsPublished())) {
+                continue;
             }
+
+            Map<String, Object> courseData = new HashMap<>();
+            courseData.put("public_course_id", pc.getPublicCourseId());
+            courseData.put("title", pc.getTitle());
+            courseData.put("description", pc.getDescription());
+            courseData.put("image", pc.getImage());
+            courseData.put("teacher", pc.getTeacher());
+            courseData.put("units", pc.getUnits());
+            courseData.put("isPublished", pc.getIsPublished());
+            courseData.put("_count", pc.getCount());
+            courseData.put("enrollment", Map.of(
+                    "enrollment_id", e.getEnrollmentId(),
+                    "enrolledAt", e.getEnrolledAt(),
+                    "progress", e.getProgress()
+            ));
+            result.add(courseData);
         }
 
         return ResponseEntity.ok(result);
     }
 }
+
