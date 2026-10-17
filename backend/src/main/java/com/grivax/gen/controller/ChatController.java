@@ -1,8 +1,8 @@
-package com.gravax.gen.controller;
+package com.grivax.gen.controller;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.gravax.gen.service.GeminiService;
+import com.grivax.gen.service.GeminiService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -39,3 +39,4 @@ public class ChatController {
         }
     }
 }
+

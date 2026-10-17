@@ -1,10 +1,10 @@
-package com.gravax.gen.controller;
+package com.grivax.gen.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.gravax.gen.entity.*;
-import com.gravax.gen.repository.*;
-import com.gravax.gen.service.GeminiService;
+import com.grivax.gen.entity.*;
+import com.grivax.gen.repository.*;
+import com.grivax.gen.service.GeminiService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -271,3 +271,4 @@ public class AssessmentController {
         return null;
     }
 }
+
