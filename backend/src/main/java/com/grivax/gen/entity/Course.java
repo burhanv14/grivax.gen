@@ -1,4 +1,4 @@
-package com.gravax.gen.entity;
+package com.grivax.gen.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
@@ -83,3 +83,4 @@ public class Course {
         }
     }
 }
+
