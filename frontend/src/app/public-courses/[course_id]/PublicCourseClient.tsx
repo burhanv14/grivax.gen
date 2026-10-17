@@ -8,32 +8,42 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import YouTube from "react-youtube"
+import ReactMarkdown from "react-markdown"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { 
-  Edit, 
-  Save, 
-  Eye, 
-  Users, 
-  BookOpen, 
-  Play, 
-  FileText, 
+import {
+  Edit,
+  Save,
+  Eye,
+  Users,
+  BookOpen,
+  Play,
+  FileText,
   Search,
   Plus,
   Trash2,
   ArrowLeft,
-  Settings
+  Settings,
+  Share2
 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { toast } from "sonner"
 import type { PublicCourse, PublicUnit, PublicChapter, PublicCourseEnrollment, Student } from "@/types"
 
-export default function PublicCourseClient({ 
-  course, 
-  userRole, 
-  userId 
-}: { 
+// Extract YouTube video ID from common URL formats
+const getYoutubeVideoId = (url: string): string | null => {
+  const regExp = /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/
+  const match = url.match(regExp)
+  return match && match[2].length === 11 ? match[2] : null
+}
+
+export default function PublicCourseClient({
+  course,
+  userRole,
+  userId
+}: {
   course: PublicCourse | null
   userRole: string
   userId: string
@@ -43,7 +53,7 @@ export default function PublicCourseClient({
   const [isLoading, setIsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [activeTab, setActiveTab] = useState("overview")
-  
+
   // Course data
   const [courseData, setCourseData] = useState({
     title: course?.title || "",
@@ -51,7 +61,10 @@ export default function PublicCourseClient({
     image: course?.image || "",
     isPublished: course?.isPublished || false
   })
-  
+
+  // Pending chapter edits (local only, saved on "Save Changes" — no API call per keystroke)
+  const [chapterEdits, setChapterEdits] = useState<Record<string, { name?: string; youtubeVidLink?: string; readingMaterial?: string }>>({})
+
   // Students data
   const [students, setStudents] = useState<Student[]>([])
   const [enrolledStudents, setEnrolledStudents] = useState<PublicCourseEnrollment[]>(course?.enrollments || [])
@@ -76,7 +89,7 @@ export default function PublicCourseClient({
   // Fetch enrolled students
   const fetchEnrolledStudents = async () => {
     if (!course) return
-    
+
     try {
       const response = await fetch(`/api/public-courses/${course.public_course_id}/enroll`)
       if (response.ok) {
@@ -95,13 +108,14 @@ export default function PublicCourseClient({
     }
   }, [isTeacher, activeTab, searchQuery])
 
-  // Update course
+  // Update course + persist all pending chapter edits (only on "Save Changes")
   const updateCourse = async () => {
     if (!course) return
-    
+
     setIsSaving(true)
     try {
-      const response = await fetch(`/api/public-courses/${course.public_course_id}`, {
+      // 1. Save course-level fields
+      const courseRes = await fetch(`/api/public-courses/${course.public_course_id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -109,14 +123,37 @@ export default function PublicCourseClient({
         body: JSON.stringify(courseData)
       })
 
-      if (response.ok) {
-        toast.success("Course updated successfully!")
-        setIsEditing(false)
-        router.refresh()
-      } else {
-        const error = await response.json()
+      if (!courseRes.ok) {
+        const error = await courseRes.json()
         toast.error(error.error || "Failed to update course")
+        return
       }
+
+      // 2. Save pending chapter edits (batched, one request per changed chapter)
+      const changedChapterIds = Object.keys(chapterEdits)
+      if (changedChapterIds.length > 0) {
+        const chapterPromises = changedChapterIds.map(chapterId => {
+          const edits = chapterEdits[chapterId]
+          return fetch(`/api/public-courses/${course.public_course_id}/chapters/${chapterId}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(edits)
+          })
+        })
+        const results = await Promise.all(chapterPromises)
+        const failed = results.filter(r => !r.ok)
+        if (failed.length > 0) {
+          toast.error("Some chapter updates failed")
+          return
+        }
+      }
+
+      toast.success("Course updated successfully!")
+      setChapterEdits({}) // clear pending edits
+      setIsEditing(false)
+      router.refresh()
     } catch (error) {
       console.error("Error updating course:", error)
       toast.error("Failed to update course")
@@ -125,10 +162,39 @@ export default function PublicCourseClient({
     }
   }
 
+  // Publish a draft course - only clicking this changes draft -> published
+  const publishCourse = async () => {
+    if (!course) return
+
+    setIsSaving(true)
+    try {
+      const response = await fetch(`/api/public-courses/${course.public_course_id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ ...courseData, isPublished: true })
+      })
+
+      if (response.ok) {
+        toast.success("Course published successfully!")
+        router.refresh()
+      } else {
+        const error = await response.json()
+        toast.error(error.error || "Failed to publish course")
+      }
+    } catch (error) {
+      console.error("Error publishing course:", error)
+      toast.error("Failed to publish course")
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
   // Enroll student
   const enrollStudent = async (studentId: string) => {
     if (!course) return
-    
+
     setIsEnrolling(true)
     try {
       const response = await fetch(`/api/public-courses/${course.public_course_id}/enroll`, {
@@ -155,36 +221,21 @@ export default function PublicCourseClient({
     }
   }
 
-  // Update chapter
-  const updateChapter = async (chapterId: string, field: string, value: string) => {
-    if (!course) return
-    
-    try {
-      const response = await fetch(`/api/public-courses/${course.public_course_id}/chapters/${chapterId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ [field]: value })
-      })
-
-      if (response.ok) {
-        toast.success("Chapter updated successfully!")
-        router.refresh()
-      } else {
-        const error = await response.json()
-        toast.error(error.error || "Failed to update chapter")
+  // Track chapter edits locally (no API call per keystroke — saved on "Save Changes")
+  const handleChapterChange = (chapterId: string, field: string, value: string) => {
+    setChapterEdits(prev => ({
+      ...prev,
+      [chapterId]: {
+        ...(prev[chapterId] || {}),
+        [field]: value
       }
-    } catch (error) {
-      console.error("Error updating chapter:", error)
-      toast.error("Failed to update chapter")
-    }
+    }))
   }
 
   // Add new chapter to unit
   const addChapterToUnit = async (unitId: string) => {
     if (!course) return
-    
+
     try {
       const response = await fetch(`/api/public-courses/${course.public_course_id}/units/${unitId}/chapters`, {
         method: 'POST',
@@ -240,7 +291,7 @@ export default function PublicCourseClient({
             </p>
           </div>
         </div>
-        
+
         {isTeacher && (
           <div className="flex items-center gap-2">
             {isEditing ? (
@@ -254,10 +305,19 @@ export default function PublicCourseClient({
                 </Button>
               </>
             ) : (
-              <Button onClick={() => setIsEditing(true)}>
-                <Edit className="h-4 w-4 mr-2" />
-                Edit Course
-              </Button>
+              <>
+                {/* Publish button shown only for draft courses */}
+                {!course.isPublished && (
+                  <Button onClick={publishCourse} disabled={isSaving} variant="secondary">
+                    <Share2 className="h-4 w-4 mr-2" />
+                    {isSaving ? "Publishing..." : "Publish"}
+                  </Button>
+                )}
+                <Button onClick={() => setIsEditing(true)}>
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Course
+                </Button>
+              </>
             )}
           </div>
         )}
@@ -301,7 +361,7 @@ export default function PublicCourseClient({
                 </div>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardContent className="p-6">
                 <div className="flex items-center gap-3">
@@ -313,7 +373,7 @@ export default function PublicCourseClient({
                 </div>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardContent className="p-6">
                 <div className="flex items-center gap-3">
@@ -357,8 +417,8 @@ export default function PublicCourseClient({
                 <div className="flex items-center justify-between">
                   <CardTitle>Unit {unitIndex + 1}: {unit.name}</CardTitle>
                   {isTeacher && (
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       variant="outline"
                       onClick={() => addChapterToUnit(unit.public_unit_id)}
                     >
@@ -373,10 +433,10 @@ export default function PublicCourseClient({
                   <div key={chapter.public_chapter_id} className="border rounded-lg p-4 space-y-4">
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
-                        {isTeacher ? (
+                        {isEditing ? (
                           <Input
-                            value={chapter.name}
-                            onChange={(e) => updateChapter(chapter.public_chapter_id, 'name', e.target.value)}
+                            value={chapterEdits[chapter.public_chapter_id]?.name ?? chapter.name}
+                            onChange={(e) => handleChapterChange(chapter.public_chapter_id, 'name', e.target.value)}
                             placeholder="Chapter name"
                             className="font-medium text-lg border-none p-0 h-auto"
                           />
@@ -384,23 +444,15 @@ export default function PublicCourseClient({
                           <h4 className="font-medium text-lg">Chapter {chapterIndex + 1}: {chapter.name}</h4>
                         )}
                       </div>
-                      {isTeacher && (
-                        <div className="flex items-center gap-2">
-                          <Button size="sm" variant="outline">
-                            <Play className="h-4 w-4 mr-2" />
-                            Preview
-                          </Button>
-                        </div>
-                      )}
                     </div>
-                    
-                    {isTeacher && (
+
+                    {isEditing ? (
                       <div className="grid grid-cols-1 gap-4">
                         <div>
                           <Label>YouTube Video Link</Label>
                           <Input
-                            value={chapter.youtubeVidLink}
-                            onChange={(e) => updateChapter(chapter.public_chapter_id, 'youtubeVidLink', e.target.value)}
+                            value={chapterEdits[chapter.public_chapter_id]?.youtubeVidLink ?? chapter.youtubeVidLink}
+                            onChange={(e) => handleChapterChange(chapter.public_chapter_id, 'youtubeVidLink', e.target.value)}
                             placeholder="Enter YouTube video URL (e.g., https://www.youtube.com/watch?v=...)"
                             className="mt-1"
                           />
@@ -410,12 +462,12 @@ export default function PublicCourseClient({
                             </p>
                           )}
                         </div>
-                        
+
                         <div>
                           <Label>Reading Material (Markdown supported)</Label>
                           <Textarea
-                            value={chapter.readingMaterial || ""}
-                            onChange={(e) => updateChapter(chapter.public_chapter_id, 'readingMaterial', e.target.value)}
+                            value={(chapterEdits[chapter.public_chapter_id]?.readingMaterial ?? chapter.readingMaterial) || ""}
+                            onChange={(e) => handleChapterChange(chapter.public_chapter_id, 'readingMaterial', e.target.value)}
                             placeholder="Enter reading material content. You can use Markdown formatting."
                             className="mt-1"
                             rows={6}
@@ -425,24 +477,30 @@ export default function PublicCourseClient({
                           </p>
                         </div>
                       </div>
-                    )}
-                    
-                    {!isTeacher && (
+                    ) : (
+                      // View mode: display actual content for both teachers and students
                       <div className="space-y-3">
-                        {chapter.youtubeVidLink && (
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground p-2 bg-blue-50 dark:bg-blue-900/20 rounded">
-                            <Play className="h-4 w-4 text-blue-600" />
-                            <span>Video lesson available</span>
+                        {chapter.youtubeVidLink && getYoutubeVideoId(chapter.youtubeVidLink) && (
+                          <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+                            <YouTube
+                              videoId={getYoutubeVideoId(chapter.youtubeVidLink)}
+                              className="w-full h-full"
+                              containerClassName="h-[520px] w-full"
+                              opts={{
+                                height: "100%",
+                                width: "100%",
+                                playerVars: { autoplay: 0, rel: 0, modestbranding: 1 },
+                              }}
+                            />
                           </div>
                         )}
                         {chapter.readingMaterial && (
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground p-2 bg-green-50 dark:bg-green-900/20 rounded">
-                            <FileText className="h-4 w-4 text-green-600" />
-                            <span>Reading material available</span>
+                          <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 p-4">
+                            <ReactMarkdown>{chapter.readingMaterial}</ReactMarkdown>
                           </div>
                         )}
                         {!chapter.youtubeVidLink && !chapter.readingMaterial && (
-                          <div className="text-sm text-muted-foreground italic">
+                          <div className="text-sm text-muted-foreground italic text-center py-4">
                             Content will be available when published
                           </div>
                         )}
@@ -474,28 +532,28 @@ export default function PublicCourseClient({
                     />
                   </div>
                 </div>
-                
+
                 <div className="space-y-2 max-h-60 overflow-y-auto">
                   {students
-                    .filter(student => 
+                    .filter(student =>
                       !enrolledStudents.some(enrollment => enrollment.student_id === student.user_id)
                     )
                     .map((student) => (
-                    <div key={student.user_id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div>
-                        <p className="font-medium">{student.name || "No name"}</p>
-                        <p className="text-sm text-muted-foreground">{student.email}</p>
+                      <div key={student.user_id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div>
+                          <p className="font-medium">{student.name || "No name"}</p>
+                          <p className="text-sm text-muted-foreground">{student.email}</p>
+                        </div>
+                        <Button
+                          size="sm"
+                          onClick={() => enrollStudent(student.user_id)}
+                          disabled={isEnrolling}
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Enroll
+                        </Button>
                       </div>
-                      <Button
-                        size="sm"
-                        onClick={() => enrollStudent(student.user_id)}
-                        disabled={isEnrolling}
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Enroll
-                      </Button>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               </CardContent>
             </Card>
@@ -543,7 +601,7 @@ export default function PublicCourseClient({
                     className="mt-1"
                   />
                 </div>
-                
+
                 <div>
                   <Label htmlFor="image">Course Image URL</Label>
                   <Input
@@ -553,17 +611,9 @@ export default function PublicCourseClient({
                     className="mt-1"
                   />
                 </div>
-                
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="published"
-                    checked={courseData.isPublished}
-                    onChange={(e) => setCourseData({ ...courseData, isPublished: e.target.checked })}
-                    className="rounded"
-                  />
-                  <Label htmlFor="published">Published (visible to students)</Label>
-                </div>
+
+                {/* Publish status is controlled only by the dedicated Publish button,
+                    not by editing the course, so there is no toggle here. */}
               </CardContent>
             </Card>
           </TabsContent>
