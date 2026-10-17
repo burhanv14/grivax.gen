@@ -1,4 +1,4 @@
-package com.gravax.gen.config;
+package com.grivax.gen.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
