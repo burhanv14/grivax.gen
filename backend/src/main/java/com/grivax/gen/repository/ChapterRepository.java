@@ -1,6 +1,6 @@
-package com.gravax.gen.repository;
+package com.grivax.gen.repository;
 
-import com.gravax.gen.entity.Chapter;
+import com.grivax.gen.entity.Chapter;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -12,3 +12,4 @@ public interface ChapterRepository extends JpaRepository<Chapter, String> {
     List<Chapter> findByUnitId(String unitId);
     Optional<Chapter> findByChapterIdAndUnitId(String chapterId, String unitId);
 }
+

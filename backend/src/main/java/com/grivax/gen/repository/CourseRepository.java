@@ -1,6 +1,6 @@
-package com.gravax.gen.repository;
+package com.grivax.gen.repository;
 
-import com.gravax.gen.entity.Course;
+import com.grivax.gen.entity.Course;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -13,3 +13,4 @@ public interface CourseRepository extends JpaRepository<Course, String> {
     List<Course> findByUserIdOrderByUpdatedAtDesc(String userId);
     Optional<Course> findByCourseIdAndUserId(String courseId, String userId);
 }
+
