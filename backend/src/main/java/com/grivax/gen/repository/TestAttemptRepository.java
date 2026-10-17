@@ -1,6 +1,6 @@
-package com.gravax.gen.repository;
+package com.grivax.gen.repository;
 
-import com.gravax.gen.entity.TestAttempt;
+import com.grivax.gen.entity.TestAttempt;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -12,3 +12,4 @@ public interface TestAttemptRepository extends JpaRepository<TestAttempt, String
     Optional<TestAttempt> findByTestIdAndUserId(String testId, String userId);
     List<TestAttempt> findByTestIdAndUserIdOrderByCompletedAtDesc(String testId, String userId);
 }
+
